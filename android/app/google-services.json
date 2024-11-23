@@ -1,0 +1,121 @@
+{
+  "project_info": {
+    "project_number": "340355405116",
+    "project_id": "zoomer-af32a",
+    "storage_bucket": "zoomer-af32a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:340355405116:android:16a07f2657195703e77a39",
+        "android_client_info": {
+          "package_name": "com.example.zoomio_driverzoomio"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "340355405116-0229vehm3t5cgk47thp4got8uga4u00r.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.zoomio_driverzoomio",
+            "certificate_hash": "220bf87929b37a9db5a5fe31c1e3ea18bc5288e8"
+          }
+        },
+        {
+          "client_id": "340355405116-fa6bvudo92d3nbvc3fjuti6cm9jpahtk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDyFRPuJ_avN1K9nPyoGI2k00ppOp6eqII"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "340355405116-fa6bvudo92d3nbvc3fjuti6cm9jpahtk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:340355405116:android:a5e6a6a07b282691e77a39",
+        "android_client_info": {
+          "package_name": "com.example.zoomio_adminzoomio"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "340355405116-kt08bu7o6ikj4k72nr385k2r210qm5or.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.zoomio_adminzoomio",
+            "certificate_hash": "220bf87929b37a9db5a5fe31c1e3ea18bc5288e8"
+          }
+        },
+        {
+          "client_id": "340355405116-fa6bvudo92d3nbvc3fjuti6cm9jpahtk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDyFRPuJ_avN1K9nPyoGI2k00ppOp6eqII"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "340355405116-fa6bvudo92d3nbvc3fjuti6cm9jpahtk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:340355405116:android:ed8f18d84af74ae3e77a39",
+        "android_client_info": {
+          "package_name": "com.example.zoomio_driverzoomio"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "340355405116-98vmged0lnu7gepvj6hcns42pkutnfqj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.zoomio_driverzoomio",
+            "certificate_hash": "220bf87929b37a9db5a5fe31c1e3ea18bc5288e8"
+          }
+        },
+        {
+          "client_id": "340355405116-fa6bvudo92d3nbvc3fjuti6cm9jpahtk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDyFRPuJ_avN1K9nPyoGI2k00ppOp6eqII"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "340355405116-fa6bvudo92d3nbvc3fjuti6cm9jpahtk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
