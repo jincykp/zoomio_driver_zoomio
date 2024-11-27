@@ -397,7 +397,10 @@ class _ProfileScreenTwoState extends State<ProfileScreenTwo> {
                       },
                     );
                   },
-                  child: Text("Click to add your license"),
+                  child: const Text(
+                    "Click to add your license",
+                    style: Textstyles.addText,
+                  ),
                 ),
               )
             ],
@@ -426,30 +429,21 @@ class _ProfileScreenTwoState extends State<ProfileScreenTwo> {
         await imagePicker.pickImage(source: ImageSource.gallery);
 
     if (pickedImage != null) {
-      String? resf = await ImageStorageService()
-          .uploadLicenseImg(pickedImage.path, context);
+      try {
+        String? resf = await ImageStorageService()
+            .uploadLicenseImg(pickedImage.path, context);
 
-      // Force refresh by appending a random query parameter
-      setState(() {
-        licenseImg = resf != null
-            ? "$resf?timestamp=${DateTime.now().millisecondsSinceEpoch}"
-            : null;
-        print("Selected Image URL: $licenseImg");
-      });
+        if (resf != null) {
+          // Force refresh by appending a random query parameter (timestamp)
+          setState(() {
+            licenseImg =
+                "$resf?timestamp=${DateTime.now().millisecondsSinceEpoch}";
+            print("SELECTED IMAGE  URL: $licenseImg");
+          });
+        }
+      } catch (e) {
+        print("Error uploading image: $e");
+      }
     }
   }
-
-  // createProfile() {
-  //   if (formKey.currentState!.validate()) {
-  //     ProfileModel profileModel = ProfileModel(
-  //         name: nameController.text,
-  //         age: int.tryParse(ageController.text) ?? 0,
-  //         contactNumber: contactController.text,
-  //         gender: selectedGender,
-  //         vehiclePreference: selectedVehiclePreference,
-  //         experienceYears: int.tryParse(experienceController.text) ?? 0,
-  //         profileImageUrl: profileImg,
-  //         licenseImageUrl: licenseImg);
-  //   }
-  // }
 }

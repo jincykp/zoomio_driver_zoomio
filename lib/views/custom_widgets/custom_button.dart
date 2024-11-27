@@ -7,14 +7,15 @@ class CustomButtons extends StatelessWidget {
   final Color textColor;
   final double screenWidth;
   final double screenHeight;
-  const CustomButtons(
-      {super.key,
-      required this.text,
-      required this.onPressed,
-      required this.backgroundColor,
-      required this.textColor,
-      required this.screenWidth,
-      required this.screenHeight});
+  const CustomButtons({
+    super.key,
+    required this.text,
+    required this.onPressed,
+    required this.backgroundColor,
+    required this.textColor,
+    required this.screenWidth,
+    required this.screenHeight,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +24,7 @@ class CustomButtons extends StatelessWidget {
       child: ElevatedButton(
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
-             // side: BorderSide(width: screenWidth * 0.005),
+              // side: BorderSide(width: screenWidth * 0.005),
               backgroundColor: backgroundColor,
               padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
               shape: RoundedRectangleBorder(

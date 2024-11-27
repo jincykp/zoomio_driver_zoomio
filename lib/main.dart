@@ -1,11 +1,14 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:provider/provider.dart'; // Import Provider
+import 'package:provider/provider.dart';
+import 'package:zoomio_driverzoomio/data/services/auth_services.dart';
+import 'package:zoomio_driverzoomio/data/services/profile_services.dart';
 import 'package:zoomio_driverzoomio/firebase_options.dart';
+import 'package:zoomio_driverzoomio/views/auth_screens/bloc/sign_up_bloc.dart';
 import 'package:zoomio_driverzoomio/views/bloc/themestate/thememode.dart';
-import 'package:zoomio_driverzoomio/views/provider/user_profile_provider.dart';
-import 'package:zoomio_driverzoomio/views/splash_screen.dart';
+import 'package:zoomio_driverzoomio/views/profile_screens/bloc/driver_profile_bloc.dart';
+import 'package:zoomio_driverzoomio/views/splash_screen.dart'; // Import ProfileRepository
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,28 +24,29 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
+    return MultiProvider(
       providers: [
+        Provider(
+            create: (_) =>
+                ProfileRepository()), // Provide ProfileRepository globally
         BlocProvider(
           create: (context) => ThemeCubit(), // Create ThemeCubit
         ),
-      ],
-      child: ChangeNotifierProvider(
-        create: (context) => ProfileProvider(), // Create ProfileProvider
-        child: BlocBuilder<ThemeCubit, ThemeModeState>(
-          builder: (context, themeMode) {
-            return MaterialApp(
-              debugShowCheckedModeBanner: false,
-              title: 'Flutter Demo',
-              theme: ThemeData.light(), // Light theme
-              darkTheme: ThemeData.dark(), // Dark theme
-              themeMode: themeMode == ThemeModeState.dark
-                  ? ThemeMode.light
-                  : ThemeMode.dark, // Set theme mode based on state
-              home: const SplashScreen(),
-            );
-          },
+        BlocProvider(
+          create: (_) => SignUpBloc(AuthServices()), // Create SignUpBloc
         ),
+        BlocProvider(
+          create: (context) => DriverProfileBloc(context
+              .read<ProfileRepository>()), // Use the provided ProfileRepository
+        ),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Flutter Demo',
+        theme: ThemeData.light(),
+        darkTheme: ThemeData.dark(),
+        themeMode: ThemeMode.light,
+        home: const SplashScreen(),
       ),
     );
   }

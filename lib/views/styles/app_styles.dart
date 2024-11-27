@@ -24,6 +24,7 @@ class Textstyles {
     fontSize: 12,
     color: Color.fromARGB(255, 216, 30, 30),
   );
+  static const TextStyle addText = TextStyle(fontSize: 12, color: Colors.blue);
 
   static const TextStyle buttonText =
       TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.w600);

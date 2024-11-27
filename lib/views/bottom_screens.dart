@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'package:google_nav_bar/google_nav_bar.dart';
@@ -19,12 +20,13 @@ class BottomScreens extends StatefulWidget {
 class _BottomScreensState extends State<BottomScreens> {
   final AuthServices auth = AuthServices();
   int _selectedIndex = 0;
+  String driverId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
   final List<Widget> _screens = [
     // Replace these with your actual screen widgets
     HomeScreen(),
     NotificationsScreen(),
-    ProfileScreen(),
+    ProfileScreen(userId: ''),
   ];
 
   void _onItemTapped(int index) {

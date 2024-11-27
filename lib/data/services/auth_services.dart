@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:zoomio_driverzoomio/views/bottom_screens.dart';
 import 'package:zoomio_driverzoomio/views/profile_screens/secondprofile.dart';
 
 class AuthServices {
@@ -56,10 +57,11 @@ class AuthServices {
   }
 
   // Google Sign-in
+
   Future<void> signInWithGoogle(BuildContext context) async {
     try {
       // Start the Google Sign-In process
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
       // Check if the user successfully signed in
       if (googleUser != null) {
@@ -79,43 +81,90 @@ class AuthServices {
           UserCredential userCredential =
               await FirebaseAuth.instance.signInWithCredential(credential);
 
-          // Get user details from Firebase (this might be necessary)
+          // After successful login, fetch user data
           String email = googleUser.email;
           String? displayName = googleUser.displayName;
+          User? user = FirebaseAuth.instance.currentUser;
 
-          // Optionally store user data in a profile or save it to Firestore
-          // Example: save user data in Firestore (if needed)
-          // await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
-          //   'email': email,
-          //   'displayName': displayName,
-          // });
+          if (user != null) {
+            // Check if the profile is complete
+            bool isProfileComplete = await checkIfProfileComplete(user.uid);
 
-          // After successful sign-in, navigate to ProfileScreenTwo
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ProfileScreenTwo(
-                // Pass user details to ProfileScreenTwo if needed
-                email: email,
-                displayName: displayName,
-              ),
-            ),
-          );
+            // Navigate based on profile completeness
+            if (isProfileComplete) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => BottomScreens()),
+              );
+            } else {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfileScreenTwo(
+                    email: email,
+                    displayName: displayName,
+                  ),
+                ),
+              );
+            }
+          } else {
+            log("Firebase user is null after Google sign-in.");
+          }
         } else {
-          // Log an error if the authentication tokens are null
           log("Google Auth Token is null");
         }
       } else {
-        log("Google Sign-In was unsuccessful");
+        log("Google Sign-In was unsuccessful.");
       }
     } catch (e) {
-      // Log any error that occurs during the sign-in process
       log("Google Sign-In failed: ${e.toString()}");
+
+      // Handle specific exceptions to show a meaningful message to the user
       if (e is PlatformException) {
         log("Error Code: ${e.code}");
         log("Error Message: ${e.message}");
+        _showErrorDialog(context, "Google Sign-In failed: ${e.message}");
+      } else {
+        // General error handling
+        _showErrorDialog(
+            context, "An unknown error occurred. Please try again.");
       }
     }
+  }
+
+  void _showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+// Helper function to check if the profile is complete (example with Firestore)
+  Future<bool> checkIfProfileComplete(String userId) async {
+    // You can check if user profile data exists in Firestore, for example:
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+
+    if (userDoc.exists) {
+      // Check if profile is completed (e.g., a flag in the document)
+      bool profileComplete = userDoc.data()?['profileComplete'] ?? false;
+      return profileComplete;
+    }
+
+    return false;
   }
 
   Future<void> sendEmailVerificationLink() async {
@@ -124,5 +173,14 @@ class AuthServices {
     } catch (e) {
       log(e.toString());
     }
+  }
+
+  Future<String> getCurrentUserId() async {
+    final String? userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      log("User is not authenticated.");
+      throw Exception("User ID is null");
+    }
+    return userId;
   }
 }
