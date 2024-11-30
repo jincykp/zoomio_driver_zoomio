@@ -1,3 +1,4 @@
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,20 +9,24 @@ import 'package:zoomio_driverzoomio/firebase_options.dart';
 import 'package:zoomio_driverzoomio/views/auth_screens/bloc/sign_up_bloc.dart';
 import 'package:zoomio_driverzoomio/views/bloc/themestate/thememode.dart';
 import 'package:zoomio_driverzoomio/views/profile_screens/bloc/driver_profile_bloc.dart';
-import 'package:zoomio_driverzoomio/views/splash_screen.dart'; // Import ProfileRepository
+import 'package:zoomio_driverzoomio/views/splash_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/material.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
+  ); // Initialize Firebase App Check
+  await FirebaseAppCheck.instance.activate(
+    // For debug/testing
+    androidProvider: AndroidProvider.debug,
   );
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -40,13 +45,20 @@ class MyApp extends StatelessWidget {
               .read<ProfileRepository>()), // Use the provided ProfileRepository
         ),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Flutter Demo',
-        theme: ThemeData.light(),
-        darkTheme: ThemeData.dark(),
-        themeMode: ThemeMode.light,
-        home: const SplashScreen(),
+      child: BlocBuilder<ThemeCubit, ThemeModeState>(
+        // Build the app based on the current theme
+        builder: (context, state) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Flutter Demo',
+            theme: ThemeData.light(), // Light theme
+            darkTheme: ThemeData.dark(), // Dark theme
+            themeMode: state == ThemeModeState.light
+                ? ThemeMode.light
+                : ThemeMode.dark, // Set theme mode based on cubit state
+            home: const SplashScreen(),
+          );
+        },
       ),
     );
   }

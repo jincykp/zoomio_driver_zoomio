@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:zoomio_driverzoomio/views/bottom_screens.dart';
-import 'package:zoomio_driverzoomio/views/profile_screens/secondprofile.dart';
+import 'package:zoomio_driverzoomio/views/profile_screens/add_profile.dart';
 
 class AuthServices {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

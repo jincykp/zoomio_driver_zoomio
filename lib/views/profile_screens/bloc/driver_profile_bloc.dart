@@ -16,7 +16,7 @@ class DriverProfileBloc extends Bloc<DriverProfileEvent, DriverProfileState> {
       SaveProfileEvent event, Emitter<DriverProfileState> emit) async {
     emit(DriverProfileLoading());
     try {
-      await repository.saveProfileData(event.profile);
+      await repository.saveProfileData(profileModel: event.profile);
       emit(DriverProfileSaved());
     } catch (e) {
       emit(DriverProfileError('Failed to save profile: $e'));
@@ -28,7 +28,7 @@ class DriverProfileBloc extends Bloc<DriverProfileEvent, DriverProfileState> {
     emit(DriverProfileLoading());
     try {
       final userId = await repository.getCurrentUserId();
-      final profile = await repository.getProfileData(userId!);
+      final profile = await repository.getProfileData();
       emit(DriverProfileLoaded(profile));
     } catch (e) {
       emit(DriverProfileError('Failed to fetch profile: $e'));

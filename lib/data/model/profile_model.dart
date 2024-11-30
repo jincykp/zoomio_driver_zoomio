@@ -1,19 +1,18 @@
 class ProfileModel {
   final String? id; // Nullable ID for Firestore documents
-  final String? userId; // Add userId to link with Firebase Authentication
-  final String name; // Non-nullable, required field
-  final int age; // Non-nullable, required field
-  final String contactNumber; // Non-nullable, required field
-  final String? gender; // Optional, can be null
-  final String? vehiclePreference; // Optional, can be null
-  final int experienceYears; // Non-nullable, required field
-  final String? profileImageUrl; // Optional, can be null
-  final String? licenseImageUrl; // Optional, can be null
+  final String? driverId; // Add userId to link with Firebase Authentication
+  final String name;
+  final int age;
+  final String contactNumber;
+  final String? gender; // Added gender
+  final String? vehiclePreference;
+  final int experienceYears;
+  final String? profileImageUrl;
+  final String? licenseImageUrl;
 
-  // Constructor with required and optional fields
   ProfileModel({
-    this.id, // ID is optional; Firestore assigns it if not provided
-    this.userId, // Add userId to constructor
+    this.id,
+    this.driverId,
     required this.name,
     required this.age,
     required this.contactNumber,
@@ -24,31 +23,27 @@ class ProfileModel {
     this.licenseImageUrl,
   });
 
-  /// Factory method to create a `ProfileModel` from a Firestore map
+  // Factory method to create an instance from a Map
   factory ProfileModel.fromMap(Map<String, dynamic> map) {
-    try {
-      return ProfileModel(
-        id: map['id'] as String?, // Ensure proper casting
-        userId: map['userId'] as String?, // Add userId parsing
-        name: map['name'] as String,
-        age: map['age'] as int,
-        contactNumber: map['contactNumber'] as String,
-        gender: map['gender'] as String?,
-        vehiclePreference: map['vehiclePreference'] as String?,
-        experienceYears: map['experienceYears'] as int,
-        profileImageUrl: map['profileImageUrl'] as String?,
-        licenseImageUrl: map['licenseImageUrl'] as String?,
-      );
-    } catch (e) {
-      throw Exception("Error parsing profile data: $e");
-    }
+    return ProfileModel(
+      id: map['id'] as String?,
+      driverId: map['userId'] as String?,
+      name: map['name'] as String,
+      age: map['age'] as int,
+      contactNumber: map['contactNumber'] as String,
+      gender: map['gender'] as String?,
+      vehiclePreference: map['vehiclePreference'] as String?,
+      experienceYears: map['experienceYears'] as int,
+      profileImageUrl: map['profileImageUrl'] as String?,
+      licenseImageUrl: map['licenseImageUrl'] as String?,
+    );
   }
 
-  /// Method to convert a `ProfileModel` instance into a Firestore-compatible map
+  // Convert the ProfileModel to a Map
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
-      'userId': userId, // Add userId to the map
+      'id': id ?? driverId, // Ensure at least one ID is saved
+      'userId': driverId ?? id,
       'name': name,
       'age': age,
       'contactNumber': contactNumber,
@@ -60,10 +55,10 @@ class ProfileModel {
     };
   }
 
-  // CopyWith method to allow creating a modified copy of the model
+  // CopyWith method for updating the model
   ProfileModel copyWith({
     String? id,
-    String? userId, // Add userId to copyWith
+    String? driverId,
     String? name,
     int? age,
     String? contactNumber,
@@ -75,7 +70,7 @@ class ProfileModel {
   }) {
     return ProfileModel(
       id: id ?? this.id,
-      userId: userId ?? this.userId, // Add userId handling
+      driverId: driverId ?? this.driverId,
       name: name ?? this.name,
       age: age ?? this.age,
       contactNumber: contactNumber ?? this.contactNumber,

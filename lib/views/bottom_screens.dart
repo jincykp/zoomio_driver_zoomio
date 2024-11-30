@@ -6,6 +6,7 @@ import 'package:zoomio_driverzoomio/data/services/auth_services.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/home.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/notifications.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/profile.dart';
+
 import 'package:zoomio_driverzoomio/views/styles/app_styles.dart';
 
 class BottomScreens extends StatefulWidget {
@@ -45,10 +46,15 @@ class _BottomScreensState extends State<BottomScreens> {
           padding: const EdgeInsets.symmetric(vertical: 10.0),
           child: GNav(
             backgroundColor: ThemeColors.primaryColor,
-            color: ThemeColors.titleColor,
+            color: Theme.of(context).brightness == Brightness.light
+                ? ThemeColors.textColor // Light theme color
+                : Colors.black, // Dark theme color (e.g., black)
+
             activeColor: ThemeColors.primaryColor,
             iconSize: 24,
-            tabBackgroundColor: ThemeColors.titleColor,
+            tabBackgroundColor: Theme.of(context).brightness == Brightness.light
+                ? ThemeColors.textColor // Light theme color
+                : Colors.black,
             padding: const EdgeInsets.all(10),
             onTabChange: _onItemTapped,
             tabs: const [

@@ -48,6 +48,13 @@ dependencies:
   flutter_bloc: ^8.1.6
   google_fonts: ^6.2.1
   provider: ^6.1.2
+  firebase_app_check: ^0.3.1+6
+  animated_toggle_switch: ^0.8.3
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  http: ^1.2.2
+  open_route_service: ^1.2.6
+  location: ^7.0.1
 
 dev_dependencies:
   flutter_test:

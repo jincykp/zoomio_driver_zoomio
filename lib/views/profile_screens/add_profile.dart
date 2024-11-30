@@ -314,7 +314,8 @@ class _ProfileScreenTwoState extends State<ProfileScreenTwo> {
                         );
 
                         try {
-                          await profileServices.saveProfileData(profile);
+                          await profileServices.saveProfileData(
+                              profileModel: profile);
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                               backgroundColor: ThemeColors.successColor,
                               content: const Text(
@@ -423,7 +424,7 @@ class _ProfileScreenTwoState extends State<ProfileScreenTwo> {
     }
   }
 
-  Future<void> licenseImage(BuildContext context) async {
+  licenseImage(BuildContext context) async {
     final imagePicker = ImagePicker();
     final pickedImage =
         await imagePicker.pickImage(source: ImageSource.gallery);
@@ -434,15 +435,15 @@ class _ProfileScreenTwoState extends State<ProfileScreenTwo> {
             .uploadLicenseImg(pickedImage.path, context);
 
         if (resf != null) {
-          // Force refresh by appending a random query parameter (timestamp)
           setState(() {
-            licenseImg =
-                "$resf?timestamp=${DateTime.now().millisecondsSinceEpoch}";
-            print("SELECTED IMAGE  URL: $licenseImg");
+            licenseImg = resf; // Remove the timestamp appending
+            print("SELECTED LICENSE IMAGE URL: $licenseImg");
           });
         }
       } catch (e) {
-        print("Error uploading image: $e");
+        print("Error uploading license image: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to upload license image: $e')));
       }
     }
   }

@@ -6,7 +6,7 @@ abstract class DriverProfileEvent {}
 class SaveProfileEvent extends DriverProfileEvent {
   final ProfileModel profile;
 
-  SaveProfileEvent(this.profile);
+  SaveProfileEvent({required this.profile});
 }
 
 class FetchProfileEvent extends DriverProfileEvent {}

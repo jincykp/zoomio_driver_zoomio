@@ -10,7 +10,7 @@ import 'package:zoomio_driverzoomio/views/auth_screens/signin_screen.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_button.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/password_buttons.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/textformfields.dart';
-import 'package:zoomio_driverzoomio/views/profile_screens/secondprofile.dart';
+import 'package:zoomio_driverzoomio/views/profile_screens/add_profile.dart';
 import 'package:zoomio_driverzoomio/views/styles/app_styles.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -228,7 +228,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => const SignInScreen()),
+                                  builder: (context) => SignInScreen()),
                             );
                           },
                           child: const Text("Sign In",

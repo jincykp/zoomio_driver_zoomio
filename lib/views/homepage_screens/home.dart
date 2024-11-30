@@ -1,114 +1,118 @@
+import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:flutter/material.dart';
-import 'package:zoomio_driverzoomio/data/services/auth_services.dart';
-import 'package:zoomio_driverzoomio/views/auth_screens/signin_screen.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:zoomio_driverzoomio/data/services/profile_services.dart';
+import 'package:zoomio_driverzoomio/views/styles/app_styles.dart';
+import 'package:http/http.dart' as http;
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class HomeScreen extends StatefulWidget {
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool isOnline = false; // Initial state of the switch
+  final ProfileRepository profileRepository =
+      ProfileRepository(); // Initialize your profile repository
+
+  final MapController mapController = MapController(); // Map controller
+  final LatLng defaultPoint =
+      LatLng(8.5241, 76.9366); // Kerala, India (Thiruvananthapuram)
+// Default map center
+
+  // Function to handle the toggle change and update Firebase
+  Future<void> toggleStatus(bool value) async {
+    setState(() {
+      isOnline = value;
+    });
+
+    // Update the driver's online status in Firebase
+    try {
+      await profileRepository.updateDriverStatus(value);
+    } catch (e) {
+      print('Error updating driver status: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final AuthServices auth = AuthServices();
     return Scaffold(
       appBar: AppBar(
         actions: [
-          IconButton(
-            onPressed: () async {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text(
-                      "Logout Confirmation",
-                      //   style: Textstyles.buttonText,
-                    ),
-                    content: const Text("Are you sure you want to logout?"),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text("Cancel"),
-                      ),
-                      TextButton(
-                        onPressed: () async {
-                          Navigator.of(context).pop();
-                          await auth.signout();
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const SignInScreen()),
-                          );
-                        },
-                        child: const Text("Logout"),
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-            icon: const Icon(Icons.logout),
+          AnimatedToggleSwitch<bool>.size(
+            current: isOnline,
+            values: const [false, true],
+            iconOpacity: 0.2,
+            indicatorSize: const Size.fromWidth(70),
+            customIconBuilder: (context, local, global) => Text(
+              local.value ? 'Online' : 'Offline',
+              style: TextStyle(
+                color: Color.lerp(
+                  ThemeColors.alertColor,
+                  ThemeColors.textColor,
+                  local.animationValue,
+                ),
+                fontSize: 10,
+              ),
+            ),
+            borderWidth: 3.0,
+            iconAnimationType: AnimationType.onHover,
+            style: ToggleStyle(
+              indicatorColor: ThemeColors.primaryColor,
+              borderColor: Colors.transparent,
+              borderRadius: BorderRadius.circular(25),
+            ),
+            onChanged: toggleStatus,
+          ),
+          const SizedBox(width: 10),
+        ],
+      ),
+      body: Stack(
+        children: [
+          // OpenStreetMap
+          FlutterMap(
+            mapController: mapController,
+            options: MapOptions(
+              // Set initial zoom level and center
+              onTap: (tapPosition, latLng) {
+                // Handle map tap event (optional)
+                print('Tapped on: $latLng');
+              },
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                userAgentPackageName: 'dev.fleaflet.flutter_map.example',
+              ),
+            ],
+          ),
+
+          // Optional toggle overlay or other UI elements
+          Positioned(
+            top: 10,
+            left: 10,
+            child: Container(
+              padding: const EdgeInsets.all(8.0),
+              color: Colors.white.withOpacity(0.8),
+              child: Text(
+                isOnline ? 'Driver is Online' : 'Driver is Offline',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isOnline ? Colors.green : Colors.red,
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      body: Padding(
-        padding: EdgeInsets.all(12.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            SizedBox(
-              width: double.infinity,
-              // child: Container(
-              //   decoration: BoxDecoration(
-              //     color:
-              //         const Color.fromARGB(255, 66, 60, 60), // Outer box color
-              //     borderRadius: BorderRadius.circular(19),
-              //   ),
-              //   child: Padding(
-              //     padding: const EdgeInsets.all(
-              //         15.0), // Padding inside the outer box
-              //     child: Container(
-              //       decoration: BoxDecoration(
-              //         // color: const Color.fromARGB(
-              //         //     255, 228, 226, 226), // Inner box color
-              //         borderRadius: BorderRadius.circular(
-              //             15), // Slightly smaller radius for inner box
-              //         boxShadow: const [
-              //           BoxShadow(
-              //             //color: Colors.grey.withOpacity(0.5),
-              //             spreadRadius: 1,
-              //             blurRadius: 5,
-              //             offset: Offset(0, 3), // Shadow position
-              //           ),
-              //         ],
-              //       ),
-              //       child: TextFormField(
-              //         decoration: const InputDecoration(
-              //           hintText: "Where would you go?",
-              //           hintStyle: TextStyle(
-              //             color: Colors.grey,
-              //             fontSize: 14,
-              //           ),
-              //           prefixIcon: Icon(
-              //             Icons.search,
-              //             size: 25,
-              //           ),
-              //           border: OutlineInputBorder(
-              //               borderRadius: BorderRadius.all(
-              //                 Radius.circular(15),
-              //               ),
-              //               borderSide:
-              //                   BorderSide(color: ThemeColors.primaryColor)
-
-              //               // Removes border line from TextFormField
-              //               ),
-              //         ),
-              //       ),
-              //     ),
-              //   ),
-              // ),
-            ),
-          ],
-        ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Move the map to the default position on button press
+          mapController.move(defaultPoint, 13.0); // Set center and zoom
+        },
+        child: const Icon(Icons.my_location),
       ),
     );
   }
