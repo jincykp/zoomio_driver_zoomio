@@ -96,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(8.0),
               color: Colors.white.withOpacity(0.8),
               child: Text(
-                isOnline ? 'Driver is Online' : 'Driver is Offline',
+                isOnline ? ' Online' : ' Offline',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
