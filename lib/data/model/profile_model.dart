@@ -1,10 +1,9 @@
 class ProfileModel {
-  final String? id; // Nullable ID for Firestore documents
-  final String? driverId; // Add userId to link with Firebase Authentication
+  final String? id; // Unique identifier for Firestore and app logic.
   final String name;
   final int age;
   final String contactNumber;
-  final String? gender; // Added gender
+  final String? gender;
   final String? vehiclePreference;
   final int experienceYears;
   final String? profileImageUrl;
@@ -12,7 +11,6 @@ class ProfileModel {
 
   ProfileModel({
     this.id,
-    this.driverId,
     required this.name,
     required this.age,
     required this.contactNumber,
@@ -23,11 +21,10 @@ class ProfileModel {
     this.licenseImageUrl,
   });
 
-  // Factory method to create an instance from a Map
-  factory ProfileModel.fromMap(Map<String, dynamic> map) {
+  factory ProfileModel.fromMap(Map<String, dynamic> map,
+      {required String docId}) {
     return ProfileModel(
-      id: map['id'] as String?,
-      driverId: map['userId'] as String?,
+      id: docId, // Always use Firestore's document ID
       name: map['name'] as String,
       age: map['age'] as int,
       contactNumber: map['contactNumber'] as String,
@@ -39,11 +36,9 @@ class ProfileModel {
     );
   }
 
-  // Convert the ProfileModel to a Map
   Map<String, dynamic> toMap() {
     return {
-      'id': id ?? driverId, // Ensure at least one ID is saved
-      'userId': driverId ?? id,
+      'id': id,
       'name': name,
       'age': age,
       'contactNumber': contactNumber,
@@ -55,10 +50,8 @@ class ProfileModel {
     };
   }
 
-  // CopyWith method for updating the model
   ProfileModel copyWith({
     String? id,
-    String? driverId,
     String? name,
     int? age,
     String? contactNumber,
@@ -70,7 +63,6 @@ class ProfileModel {
   }) {
     return ProfileModel(
       id: id ?? this.id,
-      driverId: driverId ?? this.driverId,
       name: name ?? this.name,
       age: age ?? this.age,
       contactNumber: contactNumber ?? this.contactNumber,

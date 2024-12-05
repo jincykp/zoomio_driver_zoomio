@@ -55,6 +55,7 @@ dependencies:
   http: ^1.2.2
   open_route_service: ^1.2.6
   location: ^7.0.1
+  firebase_messaging: ^15.1.5
 
 dev_dependencies:
   flutter_test:
