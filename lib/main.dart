@@ -8,6 +8,7 @@ import 'package:zoomio_driverzoomio/data/services/profile_services.dart';
 import 'package:zoomio_driverzoomio/firebase_options.dart';
 import 'package:zoomio_driverzoomio/views/auth_screens/bloc/sign_up_bloc.dart';
 import 'package:zoomio_driverzoomio/views/bloc/themestate/thememode.dart';
+import 'package:zoomio_driverzoomio/views/homepage_screens/bloc/driver_status_bloc.dart';
 import 'package:zoomio_driverzoomio/views/profile_screens/bloc/driver_profile_bloc.dart';
 import 'package:zoomio_driverzoomio/views/splash_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -42,6 +43,10 @@ class MyApp extends StatelessWidget {
         ),
         BlocProvider(
           create: (context) => DriverProfileBloc(context
+              .read<ProfileRepository>()), // Use the provided ProfileRepository
+        ),
+        BlocProvider(
+          create: (context) => DriverStatusBloc(context
               .read<ProfileRepository>()), // Use the provided ProfileRepository
         ),
       ],

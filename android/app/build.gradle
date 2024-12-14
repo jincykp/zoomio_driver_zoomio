@@ -40,8 +40,18 @@ android {
             signingConfig = signingConfigs.debug
         }
     }
+    
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+    }
 }
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    implementation 'com.google.firebase:firebase-messaging:23.1.1'
+    implementation 'com.google.auth:google-auth-library-oauth2-http:1.18.0'
+ 
 }

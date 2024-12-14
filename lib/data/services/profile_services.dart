@@ -116,4 +116,25 @@ class ProfileRepository {
       rethrow;
     }
   }
+
+  // Fetch all drivers' FCM tokens
+  Future<List<String>> getAllDriverTokens() async {
+    try {
+      final querySnapshot = await _firestore.collection('driverProfiles').get();
+      List<String> driverTokens = [];
+
+      for (var doc in querySnapshot.docs) {
+        // Ensure that 'fcm_token' exists for each driver
+        String? token = doc['fcm_token'];
+        if (token != null) {
+          driverTokens.add(token);
+        }
+      }
+
+      return driverTokens;
+    } catch (e) {
+      print('Error fetching all driver tokens: $e');
+      rethrow;
+    }
+  }
 }
