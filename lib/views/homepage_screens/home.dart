@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:animated_toggle_switch/animated_toggle_switch.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +25,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String realPickuplocation = '';
+  String realDropOfflocation = '';
   bool isOnline = false; // Initial state of the switch
   final ProfileRepository profileRepository =
       ProfileRepository(); // Initialize your profile repository
@@ -85,37 +89,120 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     fetchCurrentLocation();
     notificationServices.requestNotificationPermission();
-    Future<void> acceptRideRequest(String rideId) async {
-      await FirebaseDatabase.instance.ref("rides/$rideId").update({
-        'status': 'accepted',
-        'driverId': 'driverUniqueId', // Replace with the actual driver ID
-      });
-      print('Ride $rideId accepted');
-    }
-
-    listenForPickupLocation();
+    listenToDriverStatus();
   }
 
-  void listenForPickupLocation() {
+  void listenForPickupLocation() async {
+    // Cancel any existing listeners first
+    _cancelPreviousRideRequestListener();
+
+    if (!isOnline) {
+      print('Driver is offline. Not listening for ride requests.');
+      setState(() {
+        realPickuplocation = '';
+        realDropOfflocation = '';
+      });
+      return;
+    }
+
+    String currentDriverId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    if (currentDriverId.isEmpty) {
+      print('No authenticated driver found.');
+      return;
+    }
+
+    // First, fetch the current driver's vehicle preferences
+    DocumentSnapshot driverProfile = await FirebaseFirestore.instance
+        .collection('driverProfiles')
+        .doc(currentDriverId)
+        .get();
+
+    // Extract driver's vehicle preferences
+    List<String> driverVehiclePreferences =
+        List<String>.from(driverProfile.get('vehiclePreferences') ?? []);
+
+    // If no preferences found, return
+    if (driverVehiclePreferences.isEmpty) {
+      print('No vehicle preferences found for the driver.');
+      return;
+    }
+
     DatabaseReference bookingsRef =
         FirebaseDatabase.instance.ref().child('bookings');
 
-    bookingsRef.onValue.listen((event) {
-      final data = event.snapshot.value;
-      if (data != null && data is Map) {
-        // Assuming 'pickupLocation' is in each booking node
-        Map firstBooking = data.values.first; // Get the first booking
-        setState(() {
-          realPickuplocation = firstBooking['pickupLocation'] ?? 'Unknown';
-        });
-      } else {
-        setState(() {
-          realPickuplocation = 'No bookings found';
-        });
+    _rideRequestSubscription = bookingsRef
+        .orderByChild('status')
+        .equalTo('pending')
+        .onChildAdded
+        .listen((event) {
+      var bookingData = event.snapshot.value as Map?;
+
+      if (bookingData != null) {
+        // Get the vehicle type of the booking
+        String bookingVehicleType = bookingData['vehicleType'] ?? '';
+
+        // Filtering conditions:
+        // 1. Booking vehicle type matches driver's preferences
+        // 2. Booking is unassigned or assigned to this driver
+        bool isVehicleMatch =
+            // Driver preferences include the booking vehicle type
+            driverVehiclePreferences.contains(bookingVehicleType) ||
+
+                // Driver prefers both car and bike
+                driverVehiclePreferences.length > 1;
+
+        if (isVehicleMatch &&
+            (bookingData['driverId'] == null ||
+                bookingData['driverId'] == currentDriverId)) {
+          setState(() {
+            realPickuplocation = bookingData['pickupLocation'] ?? 'Unknown';
+            realDropOfflocation = bookingData['dropOffLocation'] ?? 'Unknown';
+          });
+        }
+      }
+    });
+  }
+
+// Method to cancel previous ride request listener
+  StreamSubscription? _rideRequestSubscription;
+
+  void _cancelPreviousRideRequestListener() {
+    _rideRequestSubscription?.cancel();
+    _rideRequestSubscription = null;
+  }
+
+  @override
+  void dispose() {
+    _cancelPreviousRideRequestListener();
+    super.dispose();
+  }
+
+  void listenToDriverStatus() {
+    final String? userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      print('No authenticated user found.');
+      return;
+    }
+
+    final driverProfileCollection =
+        FirebaseFirestore.instance.collection("driverProfiles");
+
+    driverProfileCollection.doc(userId).snapshots().listen((snapshot) {
+      if (snapshot.exists) {
+        final data = snapshot.data();
+        if (data != null && data['isOnline'] != null) {
+          setState(() {
+            isOnline = data['isOnline'] as bool;
+          });
+
+          // If the driver is online, start listening to ride bookings
+          if (isOnline) {
+            listenForPickupLocation();
+          }
+        }
       }
     });
   }
@@ -156,107 +243,119 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                 ],
               ),
-              Center(
-                child: Container(
-                    constraints: const BoxConstraints(
-                      maxWidth: 350, // Limit max width
-                    ),
-                    color: Colors.white,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 200,
-                            height: 150,
-                            color: Colors.grey,
-                            child: Image.asset(
-                              "assets/images/yellow_car.png",
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          const Text(
-                            "New Ride Request",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const Divider(
-                            thickness: 2,
-                            color: ThemeColors.baseColor,
-                          ),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.my_location,
-                                color: ThemeColors.successColor,
-                              ),
-                              const SizedBox(
-                                width: 10,
-                              ),
-                              Expanded(
-                                child: Text(
-                                  "$realPickuplocation",
-                                  textAlign: TextAlign.start,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(
-                            height: 15,
-                          ),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.location_on,
-                                color: ThemeColors.alertColor,
-                              ),
-                              const SizedBox(
-                                width: 10,
-                              ),
-                              Expanded(
-                                child: Text(
-                                  "$realPickuplocation",
-                                  textAlign: TextAlign.start,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Divider(
-                            thickness: 2,
-                            color: ThemeColors.baseColor,
-                          ),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: CustomButtons(
-                                    text: "CANCEL",
-                                    onPressed: () {},
-                                    backgroundColor: ThemeColors.alertColor,
-                                    textColor: ThemeColors.textColor,
-                                    screenWidth: screenWidth,
-                                    screenHeight: screenHeight),
-                              ),
-                              const SizedBox(
-                                width: 10,
-                              ),
-                              Expanded(
-                                child: CustomButtons(
-                                    text: "ACCEPT",
-                                    onPressed: () {},
-                                    backgroundColor: ThemeColors.successColor,
-                                    textColor: ThemeColors.textColor,
-                                    screenWidth: screenWidth,
-                                    screenHeight: screenHeight),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(
-                            height: 10,
-                          )
-                        ],
+              if (isOnline &&
+                  realPickuplocation != 'No requests (Driver offline)')
+                Center(
+                  child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.black // Light text color for dark mode
+                            : Colors.white, // Dark text color for light mode
                       ),
-                    )),
-              )
+                      constraints: const BoxConstraints(
+                        maxWidth: 350, // Limit max width
+                      ),
+                      //  color: Colors.white,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 200,
+                              height: 150,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors
+                                      .black // Light text color for dark mode
+                                  : Colors.white,
+                              child: Image.asset(
+                                "assets/images/yellow_car_original.png",
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            const Text(
+                              "New Ride Request",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const Divider(
+                              thickness: 2,
+                              color: ThemeColors.baseColor,
+                            ),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.my_location,
+                                  color: ThemeColors.successColor,
+                                ),
+                                const SizedBox(
+                                  width: 10,
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    "$realPickuplocation",
+                                    textAlign: TextAlign.start,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 15,
+                            ),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.location_on,
+                                  color: ThemeColors.alertColor,
+                                ),
+                                const SizedBox(
+                                  width: 10,
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    "$realDropOfflocation",
+                                    textAlign: TextAlign.start,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Divider(
+                              thickness: 2,
+                              color: ThemeColors.baseColor,
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: CustomButtons(
+                                      text: "CANCEL",
+                                      onPressed: () {},
+                                      backgroundColor: ThemeColors.alertColor,
+                                      textColor: ThemeColors.textColor,
+                                      screenWidth: screenWidth,
+                                      screenHeight: screenHeight),
+                                ),
+                                const SizedBox(
+                                  width: 10,
+                                ),
+                                Expanded(
+                                  child: CustomButtons(
+                                      text: "ACCEPT",
+                                      onPressed: () {},
+                                      backgroundColor: ThemeColors.successColor,
+                                      textColor: ThemeColors.textColor,
+                                      screenWidth: screenWidth,
+                                      screenHeight: screenHeight),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 10,
+                            )
+                          ],
+                        ),
+                      )),
+                )
             ],
           ),
 

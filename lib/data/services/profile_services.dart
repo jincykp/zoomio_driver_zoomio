@@ -83,21 +83,26 @@ class ProfileRepository {
   // Fetch Driver's current status (Online/Offline)
   Future<bool> getDriverStatus() async {
     try {
-      final String? userId = await getCurrentUserId();
-      if (userId == null) throw Exception('No authenticated user found.');
-
-      final docSnapshot =
-          await _firestore.collection('driverProfiles').doc(userId).get();
-
-      if (!docSnapshot.exists) {
-        throw Exception('No profile found for userId: $userId');
+      final String? userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('No authenticated user found.');
       }
 
-      // Return the driver's online status or default to `false`
-      return docSnapshot.data()?['isOnline'] ?? false;
+      final driverProfileCollection =
+          FirebaseFirestore.instance.collection("driverProfiles");
+      final snapshot = await driverProfileCollection.doc(userId).get();
+
+      if (snapshot.exists) {
+        final data = snapshot.data();
+        if (data != null && data['isOnline'] != null) {
+          return data['isOnline'] as bool;
+        }
+      }
+
+      return false; // Default to offline if status not found
     } catch (e) {
       print('Error fetching driver status: $e');
-      rethrow;
+      return false;
     }
   }
 
