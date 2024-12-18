@@ -109,10 +109,13 @@ class ProfileRepository {
 
       final docRef = _firestore.collection('driverProfiles').doc(userId);
 
+      // Add more detailed logging
+      print('Attempting to update status for user $userId to $isOnline');
+
       await docRef.update({'isOnline': isOnline});
-      print('Driver status updated successfully.');
+      print('Driver status successfully updated to $isOnline');
     } catch (e) {
-      print('Error updating driver status: $e');
+      print('Detailed error updating driver status: $e');
       rethrow;
     }
   }

@@ -398,7 +398,7 @@ class _ProfileScreenTwoState extends State<ProfileScreenTwo> {
                       },
                     );
                   },
-                  child: const Text(
+                  child: Text(
                     "Click to add your license",
                     style: Textstyles.addText,
                   ),

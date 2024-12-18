@@ -1,4 +1,5 @@
 import 'package:animated_toggle_switch/animated_toggle_switch.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:zoomio_driverzoomio/data/services/profile_services.dart';
+import 'package:zoomio_driverzoomio/views/custom_widgets/custom_button.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/bloc/driver_status_bloc.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/bloc/driver_status_event.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/bloc/driver_status_state.dart';
@@ -19,6 +21,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String realPickuplocation = '';
   bool isOnline = false; // Initial state of the switch
   final ProfileRepository profileRepository =
       ProfileRepository(); // Initialize your profile repository
@@ -84,17 +87,44 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    fetchCurrentLocation();
     notificationServices.requestNotificationPermission();
-    // notificationServices.isTokenRefresh();
-    notificationServices.getDeviceToken().then((value) {
-      print('FCM Device Token');
-      print(value);
-      fetchCurrentLocation();
+    Future<void> acceptRideRequest(String rideId) async {
+      await FirebaseDatabase.instance.ref("rides/$rideId").update({
+        'status': 'accepted',
+        'driverId': 'driverUniqueId', // Replace with the actual driver ID
+      });
+      print('Ride $rideId accepted');
+    }
+
+    listenForPickupLocation();
+  }
+
+  void listenForPickupLocation() {
+    DatabaseReference bookingsRef =
+        FirebaseDatabase.instance.ref().child('bookings');
+
+    bookingsRef.onValue.listen((event) {
+      final data = event.snapshot.value;
+      if (data != null && data is Map) {
+        // Assuming 'pickupLocation' is in each booking node
+        Map firstBooking = data.values.first; // Get the first booking
+        setState(() {
+          realPickuplocation = firstBooking['pickupLocation'] ?? 'Unknown';
+        });
+      } else {
+        setState(() {
+          realPickuplocation = 'No bookings found';
+        });
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       body: Stack(
         children: [
@@ -113,6 +143,120 @@ class _HomeScreenState extends State<HomeScreen> {
                 urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 userAgentPackageName: 'dev.fleaflet.flutter_map.example',
               ),
+              MarkerLayer(
+                markers: [
+                  if (currentLocation != null)
+                    Marker(
+                      point: currentLocation!,
+                      builder: (ctx) => const Icon(
+                        Icons.location_on,
+                        color: Colors.red,
+                        size: 50, // Adjust size as needed
+                      ),
+                    ),
+                ],
+              ),
+              Center(
+                child: Container(
+                    constraints: const BoxConstraints(
+                      maxWidth: 350, // Limit max width
+                    ),
+                    color: Colors.white,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 200,
+                            height: 150,
+                            color: Colors.grey,
+                            child: Image.asset(
+                              "assets/images/yellow_car.png",
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          const Text(
+                            "New Ride Request",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const Divider(
+                            thickness: 2,
+                            color: ThemeColors.baseColor,
+                          ),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.my_location,
+                                color: ThemeColors.successColor,
+                              ),
+                              const SizedBox(
+                                width: 10,
+                              ),
+                              Expanded(
+                                child: Text(
+                                  "$realPickuplocation",
+                                  textAlign: TextAlign.start,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 15,
+                          ),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on,
+                                color: ThemeColors.alertColor,
+                              ),
+                              const SizedBox(
+                                width: 10,
+                              ),
+                              Expanded(
+                                child: Text(
+                                  "$realPickuplocation",
+                                  textAlign: TextAlign.start,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Divider(
+                            thickness: 2,
+                            color: ThemeColors.baseColor,
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: CustomButtons(
+                                    text: "CANCEL",
+                                    onPressed: () {},
+                                    backgroundColor: ThemeColors.alertColor,
+                                    textColor: ThemeColors.textColor,
+                                    screenWidth: screenWidth,
+                                    screenHeight: screenHeight),
+                              ),
+                              const SizedBox(
+                                width: 10,
+                              ),
+                              Expanded(
+                                child: CustomButtons(
+                                    text: "ACCEPT",
+                                    onPressed: () {},
+                                    backgroundColor: ThemeColors.successColor,
+                                    textColor: ThemeColors.textColor,
+                                    screenWidth: screenWidth,
+                                    screenHeight: screenHeight),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 10,
+                          )
+                        ],
+                      ),
+                    )),
+              )
             ],
           ),
 
@@ -170,74 +314,5 @@ class _HomeScreenState extends State<HomeScreen> {
         child: const Icon(Icons.my_location),
       ),
     );
-  }
-
-  void listenForRideRequests() {
-    // Replace with the vehicle type of the driver
-    final String driverVehicleType =
-        "bike"; // Get this from the driver's profile
-
-    FirebaseDatabase.instance
-        .ref("rides")
-        .orderByChild("vehicleType")
-        .equalTo(driverVehicleType)
-        .onChildAdded
-        .listen((event) {
-      if (event.snapshot.exists) {
-        final rideData = Map<String, dynamic>.from(event.snapshot.value as Map);
-        if (rideData['status'] == 'pending' && isOnline) {
-          showRideRequestDialog(rideData, event.snapshot.key!);
-        }
-      }
-    });
-  }
-
-  void showRideRequestDialog(Map<String, dynamic> rideData, String rideId) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('New Ride Request'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Pickup: ${rideData['pickupLocation']}'),
-              Text('Dropoff: ${rideData['dropOffLocation']}'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close the dialog
-                rejectRideRequest(rideId);
-              },
-              child: const Text('Reject'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context); // Close the dialog
-                acceptRideRequest(rideId);
-              },
-              child: const Text('Accept'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> acceptRideRequest(String rideId) async {
-    await FirebaseDatabase.instance.ref("rides/$rideId").update({
-      'status': 'accepted',
-      'driverId': 'driverUniqueId', // Replace with the actual driver ID
-    });
-    print('Ride $rideId accepted');
-  }
-
-  Future<void> rejectRideRequest(String rideId) async {
-    await FirebaseDatabase.instance.ref("rides/$rideId").update({
-      'status': 'rejected',
-    });
-    print('Ride $rideId rejected');
   }
 }

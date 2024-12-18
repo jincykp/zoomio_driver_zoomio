@@ -27,10 +27,14 @@ class DriverStatusBloc extends Bloc<DriverStatusEvent, DriverStatusState> {
   Future<void> _onUpdateDriverStatus(
       UpdateDriverStatus event, Emitter<DriverStatusState> emit) async {
     try {
+      // Add logging to verify the event value
+      print('Updating driver status: ${event.isOnline}'); // Debug print
+
       await profileRepository.updateDriverStatus(event.isOnline);
       emit(DriverStatusUpdated(event.isOnline));
     } catch (e) {
-      // Handle errors if needed
+      print('Error in _onUpdateDriverStatus: $e'); // Error logging
+      // Optionally re-emit the previous state or handle the error
     }
   }
 }
