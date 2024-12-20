@@ -104,7 +104,7 @@ class ProfileScreen extends StatelessWidget {
                                       // Handle the case where user is not logged in
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
-                                        SnackBar(
+                                        const SnackBar(
                                             content:
                                                 Text('User not logged in!')),
                                       );
@@ -202,7 +202,7 @@ class ProfileScreen extends StatelessWidget {
               ),
             );
           }
-          return Center(child: Text("No profile found"));
+          return const Center(child: Text("No profile found"));
         },
       ),
     );

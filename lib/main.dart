@@ -11,8 +11,6 @@ import 'package:zoomio_driverzoomio/views/bloc/themestate/thememode.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/bloc/driver_status_bloc.dart';
 import 'package:zoomio_driverzoomio/views/profile_screens/bloc/driver_profile_bloc.dart';
 import 'package:zoomio_driverzoomio/views/splash_screen.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter/material.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
