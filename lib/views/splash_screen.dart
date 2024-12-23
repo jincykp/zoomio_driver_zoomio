@@ -39,7 +39,7 @@ class _SplashScreenState extends State<SplashScreen> {
   /// Check user authentication state and navigate accordingly
   Future<void> _checkAuthentication() async {
     // Simulate a short splash delay
-    await Future.delayed(const Duration(seconds: 3));
+    await Future.delayed(const Duration(seconds: 2));
 
     User? currentUser = FirebaseAuth.instance.currentUser;
 
