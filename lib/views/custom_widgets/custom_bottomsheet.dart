@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_button.dart';
 import 'package:zoomio_driverzoomio/views/styles/app_styles.dart';
@@ -17,35 +18,58 @@ class CustomBottomSheet extends StatelessWidget {
   }) : super(key: key);
 
   Future<Map<String, String>> _getUserDetails() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      print("No user is currently logged in.");
-      return {'displayName': 'Unknown', 'phone': 'Not available'};
-    }
-
-    print("Looking for user details with ID: ${user.uid}");
-
     try {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+      print(
+          '===== DEBUG: Getting user details for booking ID: $bookingId =====');
+
+      // Step 1: Get booking data from Realtime Database
+      final DatabaseReference bookingsRef =
+          FirebaseDatabase.instance.ref().child('bookings');
+      final DatabaseEvent bookingEvent =
+          await bookingsRef.child(bookingId).once();
+
+      if (bookingEvent.snapshot.value == null) {
+        print('DEBUG: Booking data not found for ID: $bookingId');
+        return {'displayName': 'Unknown', 'phone': 'Not available'};
+      }
+
+      // Convert booking data to Map
+      final bookingData =
+          Map<String, dynamic>.from(bookingEvent.snapshot.value as Map);
+      print('DEBUG: Found booking data: $bookingData');
+
+      // Get userId from booking
+      final userId = bookingData['userId'];
+      if (userId == null) {
+        print('DEBUG: No userId found in booking data');
+        return {'displayName': 'Unknown', 'phone': 'Not available'};
+      }
+      print('DEBUG: Found userId in booking: $userId');
+
+      // Get user data from Firestore instead of Realtime Database
+      final userDoc = await FirebaseFirestore.instance
           .collection('users')
-          .doc(user.uid)
+          .doc(userId)
           .get();
 
-      if (userDoc.exists) {
-        print("User document found: ${userDoc.data()}");
-        var data = userDoc.data() as Map<String, dynamic>;
-        return {
-          'displayName': data['displayName'] ?? 'Unknown',
-          'phone': data['phone'] ?? 'Not available',
-        };
-      } else {
-        print("User document does not exist.");
+      if (!userDoc.exists || userDoc.data() == null) {
+        print('DEBUG: User data not found in Firestore for ID: $userId');
+        return {'displayName': 'Unknown', 'phone': 'Not available'};
       }
-    } catch (e) {
-      print("Error in _getUserDetails: $e");
-    }
 
-    return {'displayName': 'Unknown', 'phone': 'Not available'};
+      final userData = userDoc.data()!;
+      print('DEBUG: Found user data in Firestore: $userData');
+
+      return {
+        'displayName': userData['displayName'] ?? userData['name'] ?? 'Unknown',
+        'phone':
+            userData['phone'] ?? userData['phoneNumber'] ?? 'Not available',
+      };
+    } catch (e, stackTrace) {
+      print('DEBUG: Error in _getUserDetails: $e');
+      print('DEBUG: Stack trace: $stackTrace');
+      return {'displayName': 'Unknown', 'phone': 'Not available'};
+    }
   }
 
   @override
