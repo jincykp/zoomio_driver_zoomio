@@ -319,27 +319,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                         context: context,
                                         isScrollControlled: true,
                                         builder: (context) {
-                                          return DraggableScrollableSheet(
-                                            initialChildSize: 0.5,
-                                            maxChildSize: 0.8,
-                                            minChildSize: 0.2,
-                                            builder:
-                                                (context, scrollController) {
-                                              return SingleChildScrollView(
-                                                controller: scrollController,
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
-                                                  child: CustomBottomSheet(
-                                                    bookingId: bookingId!,
-                                                    pickupLocation:
-                                                        realPickuplocation,
-                                                    dropoffLocation:
-                                                        realDropOfflocation,
-                                                  ),
-                                                ),
-                                              );
-                                            },
+                                          return Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: CustomBottomSheet(
+                                              bookingId: bookingId!,
+                                              pickupLocation:
+                                                  realPickuplocation,
+                                              dropoffLocation:
+                                                  realDropOfflocation,
+                                              // Pass the user ID dynamically
+                                            ),
                                           );
                                         },
                                       );

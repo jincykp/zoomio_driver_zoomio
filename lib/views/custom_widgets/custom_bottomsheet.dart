@@ -15,65 +15,34 @@ class CustomBottomSheet extends StatelessWidget {
     required this.pickupLocation,
     required this.dropoffLocation,
   }) : super(key: key);
-  Future<void> ensureUserDocument() async {
-    User? currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser != null) {
-      DocumentSnapshot doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .get();
-
-      if (!doc.exists) {
-        // Create the document if it doesn't exist
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUser.uid)
-            .set({
-          'email': currentUser.email,
-          'displayName': currentUser.displayName ?? 'User',
-          'phone': currentUser.phoneNumber ?? '',
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-        print("Created new document for user ${currentUser.uid}");
-      }
-    }
-  }
 
   Future<Map<String, String>> _getUserDetails() async {
     User? user = FirebaseAuth.instance.currentUser;
-    print("Looking for user details with ID: ${user?.uid}");
+    if (user == null) {
+      print("No user is currently logged in.");
+      return {'displayName': 'Unknown', 'phone': 'Not available'};
+    }
 
-    // Print all collections to verify structure
-    QuerySnapshot collections =
-        await FirebaseFirestore.instance.collection('users').get();
-    print("All documents in users collection:");
-    collections.docs.forEach((doc) {
-      print("Document ID: ${doc.id}");
-      print("Document data: ${doc.data()}");
-    });
+    print("Looking for user details with ID: ${user.uid}");
 
-    if (user != null) {
-      try {
-        DocumentSnapshot userDoc = await FirebaseFirestore.instance
-            .collection(
-                'users') // Make sure this is the correct collection name
-            .doc(user.uid)
-            .get();
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
 
-        print("Attempting to fetch document from: users/${user.uid}");
-        print("Document exists: ${userDoc.exists}");
-        print("Document data: ${userDoc.data()}");
-
-        if (userDoc.exists) {
-          var data = userDoc.data() as Map<String, dynamic>;
-          return {
-            'displayName': data['displayName'] ?? 'Unknown',
-            'phone': data['phone'] ?? 'Not available',
-          };
-        }
-      } catch (e) {
-        print("Error in _getUserDetails: $e");
+      if (userDoc.exists) {
+        print("User document found: ${userDoc.data()}");
+        var data = userDoc.data() as Map<String, dynamic>;
+        return {
+          'displayName': data['displayName'] ?? 'Unknown',
+          'phone': data['phone'] ?? 'Not available',
+        };
+      } else {
+        print("User document does not exist.");
       }
+    } catch (e) {
+      print("Error in _getUserDetails: $e");
     }
 
     return {'displayName': 'Unknown', 'phone': 'Not available'};
@@ -84,76 +53,109 @@ class CustomBottomSheet extends StatelessWidget {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
-    return Padding(
-      padding: const EdgeInsets.all(13.0),
-      child: SingleChildScrollView(
-        child: FutureBuilder<Map<String, String>>(
-          future: _getUserDetails(),
-          builder: (context, snapshot) {
-            print("Loading user details...");
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const CircularProgressIndicator(); // Show loading indicator while fetching data
-            }
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: const BoxDecoration(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        color: Colors.white,
+      ),
+      child: FutureBuilder<Map<String, String>>(
+        future: _getUserDetails(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SizedBox(
+              height: 200, // Fixed height for loading state
+              child: Center(
+                child: SizedBox(
+                  width: 24, // Smaller size for progress indicator
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.0, // Thinner stroke
+                  ),
+                ),
+              ),
+            );
+          }
 
-            if (snapshot.hasError) {
-              print("Error in FutureBuilder: ${snapshot.error}");
-              return Text('Error: ${snapshot.error}');
-            }
+          if (snapshot.hasError) {
+            return SizedBox(
+              height: 100,
+              child: Center(child: Text('Error: ${snapshot.error}')),
+            );
+          }
 
-            if (snapshot.hasData) {
-              print("User details: ${snapshot.data}");
-              var userDetails = snapshot.data!;
-              return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        const Icon(Icons.my_location),
-                        Expanded(
-                          child: Text(
-                            pickupLocation,
-                            style: const TextStyle(fontSize: 16),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+          if (snapshot.hasData) {
+            var userDetails = snapshot.data!;
+            return IntrinsicHeight(
+              // This will make the height fit the content
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.my_location,
+                        color: ThemeColors.successColor,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          pickupLocation,
+                          style: const TextStyle(fontSize: 16),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on,
+                          color: ThemeColors.alertColor),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          dropoffLocation,
+                          style: const TextStyle(fontSize: 16),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'User: ${userDetails['displayName']}',
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Mobile: ${userDetails['phone']}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: CustomButtons(
+                      text: 'Start now',
+                      onPressed: () {},
+                      backgroundColor: ThemeColors.primaryColor,
+                      textColor: ThemeColors.textColor,
+                      screenWidth: screenWidth,
+                      screenHeight: screenHeight,
                     ),
-                    const SizedBox(height: 5),
-                    Text(
-                      dropoffLocation,
-                      style: const TextStyle(fontSize: 16),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 20),
-                    // Display user details
-                    Text(
-                      'User: ${userDetails['displayName']}',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      'Mobile: ${userDetails['phone']}',
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                    const SizedBox(height: 20),
-                    Center(
-                        child: SizedBox(
-                      child: CustomButtons(
-                          text: 'Start now',
-                          onPressed: () {},
-                          backgroundColor: ThemeColors.primaryColor,
-                          textColor: ThemeColors.textColor,
-                          screenWidth: screenWidth,
-                          screenHeight: screenHeight),
-                    )),
-                  ]);
-            }
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            );
+          }
 
-            return const Text('No user data available');
-          },
-        ),
+          return const SizedBox(
+            height: 100,
+            child: Center(child: Text('No user data available')),
+          );
+        },
       ),
     );
   }
