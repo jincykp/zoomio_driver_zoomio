@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:zoomio_driverzoomio/data/services/driver_accepted_services.dart';
 import 'package:zoomio_driverzoomio/data/services/profile_services.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_bottomsheet.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_button.dart';
@@ -16,7 +16,6 @@ import 'package:zoomio_driverzoomio/views/homepage_screens/accept/bloc/accept_bu
 import 'package:zoomio_driverzoomio/views/push_notifications/notification_services.dart';
 import 'package:zoomio_driverzoomio/views/styles/app_styles.dart';
 import 'package:http/http.dart' as http;
-
 import 'bloc/driver_status_bloc.dart';
 import 'bloc/driver_status_event.dart';
 import 'bloc/driver_status_state.dart';
@@ -120,29 +119,72 @@ class _HomeScreenState extends State<HomeScreen> {
         FirebaseDatabase.instance.ref().child('bookings');
 
     _testRef.onValue.listen((event) {
+      print("DEBUG: Received Firebase event"); // Debug print
+
       if (event.snapshot.exists) {
-        var bookingData = event.snapshot.value as Map<dynamic, dynamic>;
+        Map<dynamic, dynamic>? bookingData;
+        try {
+          bookingData = event.snapshot.value as Map<dynamic, dynamic>;
+        } catch (e) {
+          print("DEBUG: Error casting snapshot value: $e");
+          return;
+        }
 
-        // Iterate through all bookings and fetch the booking ID
+        // Reset state if no pending bookings are found
+        bool foundPendingBooking = false;
+        String? pendingBookingId;
+        String pendingPickupLocation = '';
+        String pendingDropOffLocation = '';
+
+        // First find a valid pending booking
         bookingData.forEach((bookingKey, bookingDetails) {
-          if (bookingDetails != null && bookingDetails['status'] == 'pending') {
-            setState(() {
-              // Booking ID is a String (Firebase key)
-              bookingId = bookingKey.toString(); // Assign as String
-              realPickuplocation = bookingDetails['pickupLocation'] as String;
-              realDropOfflocation = bookingDetails['dropOffLocation'] as String;
-            });
+          if (bookingDetails != null &&
+              bookingDetails['status'] == 'pending' &&
+              !foundPendingBooking) {
+            // Only take the first pending booking
 
-            // Use the fetched booking ID here
-            print('Booking ID: $bookingId');
+            foundPendingBooking = true;
+            pendingBookingId = bookingKey.toString();
+            pendingPickupLocation =
+                bookingDetails['pickupLocation'] as String? ?? '';
+            pendingDropOffLocation =
+                bookingDetails['dropOffLocation'] as String? ?? '';
 
-            print('Pickup Location: $realPickuplocation');
-            print('Dropoff Location: $realDropOfflocation');
+            print(
+                "DEBUG: Found pending booking: $pendingBookingId"); // Debug print
+          }
+        });
+
+        // Only update state once with final values
+        setState(() {
+          if (foundPendingBooking &&
+              pendingBookingId != null &&
+              pendingPickupLocation.isNotEmpty &&
+              pendingDropOffLocation.isNotEmpty) {
+            bookingId = pendingBookingId;
+            realPickuplocation = pendingPickupLocation;
+            realDropOfflocation = pendingDropOffLocation;
+
+            print(
+                "DEBUG: Updated state with booking ID: $bookingId"); // Debug print
           } else {
-            setState(() {
+            // Only clear if we don't have an active booking being processed
+            if (bookingId == null || bookingId!.isEmpty) {
+              bookingId = null;
               realPickuplocation = '';
               realDropOfflocation = '';
-            });
+              print("DEBUG: Cleared booking state"); // Debug print
+            }
+          }
+        });
+      } else {
+        // Only clear if we don't have an active booking being processed
+        setState(() {
+          if (bookingId == null || bookingId!.isEmpty) {
+            bookingId = null;
+            realPickuplocation = '';
+            realDropOfflocation = '';
+            print("DEBUG: No snapshot exists, cleared state"); // Debug print
           }
         });
       }
@@ -175,7 +217,6 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context, state) {
       isOnline = state is DriverStatusUpdated ? state.isOnline : false;
       print('Driver is online: $isOnline');
-
       print('Pickup Location: $realPickuplocation');
       print('Dropoff Location: $realDropOfflocation');
       print(
@@ -314,30 +355,125 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: CustomButtons(
                                     text: "ACCEPT",
                                     backgroundColor: ThemeColors.successColor,
-                                    onPressed: () {
-                                      showModalBottomSheet(
-                                        context: context,
-                                        isScrollControlled: true,
-                                        builder: (context) {
-                                          return Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: CustomBottomSheet(
-                                              bookingId: bookingId!,
-                                              pickupLocation:
-                                                  realPickuplocation,
-                                              dropoffLocation:
-                                                  realDropOfflocation,
-                                              // Pass the user ID dynamically
-                                            ),
-                                          );
-                                        },
-                                      );
+                                    onPressed: () async {
+                                      try {
+                                        print(
+                                            "DEBUG: Initial bookingId value: $bookingId"); // Debug print
+                                        // Correct way to validate nullable bookingId
+                                        if (bookingId?.isEmpty ?? true) {
+                                          print(
+                                              "DEBUG: BookingId is null or empty"); // Debug print
+                                          throw Exception('Invalid booking ID');
+                                        }
+
+                                        // Validate location information
+                                        if (realPickuplocation.isEmpty ||
+                                            realDropOfflocation.isEmpty) {
+                                          throw Exception(
+                                              'Missing location information');
+                                        }
+                                        print(
+                                            "DEBUG: BookingId after validation: $bookingId"); // Debug print
+
+                                        final driverId = FirebaseAuth
+                                            .instance.currentUser?.uid;
+                                        if (driverId == null) {
+                                          throw Exception(
+                                              'Driver not authenticated');
+                                        }
+
+                                        // Accept the booking with null safety
+                                        final bookingService =
+                                            DriverBookingService();
+                                        print(
+                                            "DEBUG: About to call acceptBooking with bookingId: $bookingId"); //
+                                        await bookingService.acceptBooking(
+                                          bookingId:
+                                              bookingId!, // Now safe to use ! because we validated above
+                                          driverId: driverId,
+                                        );
+                                        print(
+                                            "DEBUG: Booking accepted successfully");
+
+                                        if (!context.mounted) return;
+
+                                        // Show success message
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                                'Ride accepted successfully!'),
+                                            backgroundColor:
+                                                ThemeColors.successColor,
+                                          ),
+                                        );
+
+                                        // Show bottom sheet
+                                        if (context.mounted) {
+                                          await showModalBottomSheet(
+                                            context: context,
+                                            isScrollControlled: true,
+                                            builder: (BuildContext context) {
+                                              print(
+                                                  "DEBUG: Building bottom sheet with bookingId: $bookingId");
+                                              return SafeArea(
+                                                child: Padding(
+                                                  padding: EdgeInsets.only(
+                                                    bottom:
+                                                        MediaQuery.of(context)
+                                                            .viewInsets
+                                                            .bottom,
+                                                    left: 8.0,
+                                                    right: 8.0,
+                                                    top: 8.0,
+                                                  ),
+                                                  child: CustomBottomSheet(
+                                                    bookingId:
+                                                        bookingId!, // Now safe to use ! because we validated above
+                                                    pickupLocation:
+                                                        realPickuplocation,
+                                                    dropoffLocation:
+                                                        realDropOfflocation,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ).catchError((error) {
+                                            print(
+                                                'Error showing bottom sheet: $error');
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                      'Error showing ride details: $error'),
+                                                  backgroundColor:
+                                                      ThemeColors.alertColor,
+                                                ),
+                                              );
+                                            }
+                                          });
+                                        }
+                                      } catch (e) {
+                                        if (!context.mounted) return;
+
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content:
+                                                Text('Error: ${e.toString()}'),
+                                            backgroundColor:
+                                                ThemeColors.alertColor,
+                                          ),
+                                        );
+                                        print('Error in accept booking: $e');
+                                      }
                                     },
                                     textColor: ThemeColors.textColor,
                                     screenWidth: screenWidth,
                                     screenHeight: screenHeight,
                                   ),
-                                ),
+                                )
                               ],
                             ),
                             const SizedBox(height: 10),

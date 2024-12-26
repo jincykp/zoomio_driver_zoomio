@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_button.dart';
+import 'package:zoomio_driverzoomio/views/homepage_screens/road_line.dart';
 import 'package:zoomio_driverzoomio/views/styles/app_styles.dart';
 
 class CustomBottomSheet extends StatelessWidget {
@@ -72,6 +73,32 @@ class CustomBottomSheet extends StatelessWidget {
     }
   }
 
+  Future<void> updateBookingStatusToOnTrip() async {
+    try {
+      // Get current driver's uid
+      final User? currentDriver = FirebaseAuth.instance.currentUser;
+      if (currentDriver == null) {
+        throw Exception('No driver logged in');
+      }
+
+      // Update only status and driverId in Realtime Database
+      final DatabaseReference bookingRef =
+          FirebaseDatabase.instance.ref().child('bookings').child(bookingId);
+
+      await bookingRef.update({
+        'status': 'on_trip',
+        'driverId': currentDriver
+            .uid, // This will help user app to fetch driver details
+        'tripStartedAt': ServerValue.timestamp,
+      });
+
+      print('Booking status updated to on_trip successfully');
+    } catch (e) {
+      print('Error updating booking status: $e');
+      throw e;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -116,6 +143,51 @@ class CustomBottomSheet extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      IconButton(
+                          onPressed: () {},
+                          icon: const Icon(
+                            Icons.person,
+                          )),
+                      Text(
+                        ' ${userDetails['displayName']}',
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const SizedBox(width: 20),
+                      Text(
+                        ' ${userDetails['phone']}',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                          onPressed: () {},
+                          icon: const Icon(
+                            Icons.phone,
+                            size: 30,
+                            color: ThemeColors.baseColor,
+                          )),
+                      IconButton(
+                          onPressed: () {},
+                          icon: const Icon(
+                            Icons.message,
+                            size: 30,
+                            color: ThemeColors.primaryColor,
+                          )),
+                    ],
+                  ),
+                  const Divider(),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       const Icon(
@@ -148,21 +220,59 @@ class CustomBottomSheet extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    'User: ${userDetails['displayName']}',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Mobile: ${userDetails['phone']}',
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
                   Center(
                     child: CustomButtons(
-                      text: 'Start now',
-                      onPressed: () {},
+                      text: 'Start Now',
+                      onPressed: () async {
+                        try {
+                          // Show loading indicator
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (BuildContext context) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            },
+                          );
+
+                          // Update booking status
+                          await updateBookingStatusToOnTrip();
+
+                          // Remove loading indicator
+                          Navigator.pop(context);
+
+                          // Show success message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Trip started successfully'),
+                              backgroundColor: ThemeColors.successColor,
+                            ),
+                          );
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => RoadLinesScreen(
+                                  pickupLocation: pickupLocation,
+                                  dropoffLocation: dropoffLocation,
+                                  userDetails:
+                                      userDetails), // Replace with your desired screen
+                            ),
+                          );
+                        } catch (e) {
+                          // Remove loading indicator
+                          Navigator.pop(context);
+
+                          // Show error message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content:
+                                  Text('Failed to start trip: ${e.toString()}'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
                       backgroundColor: ThemeColors.primaryColor,
                       textColor: ThemeColors.textColor,
                       screenWidth: screenWidth,
