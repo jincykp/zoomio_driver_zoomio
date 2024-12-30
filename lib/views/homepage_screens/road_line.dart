@@ -114,27 +114,37 @@ class _RoadLinesScreenState extends State<RoadLinesScreen> {
             flex: 1,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Trip Details',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Current Location: Kerala'),
-                  Text('Pickup: ${widget.pickupLocation}'),
-                  Text('Dropoff: ${widget.dropoffLocation}'),
-                  const SizedBox(height: 16),
-                  Text(
-                    'User Information',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  ...widget.userDetails.entries.map(
-                    (entry) => Text('${entry.key}: ${entry.value}'),
-                  ),
-                ],
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Center(
+                      child:
+                          Text('Trip Details', style: TextStyle(fontSize: 15)),
+                    ),
+                    const SizedBox(height: 16),
+                    // Text('Current Location: Kerala'),
+                    Text(
+                      'Pickup: ${widget.pickupLocation}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Dropoff: ${widget.dropoffLocation}',
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16), const Divider(),
+                    const Text(
+                      'Customer Information',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+
+                    const SizedBox(height: 8),
+                    ...widget.userDetails.entries.map(
+                      (entry) => Text(' ${entry.value}',
+                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    const Divider(),
+                  ],
+                ),
               ),
             ),
           ),

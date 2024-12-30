@@ -55,7 +55,7 @@ class MyApp extends StatelessWidget {
         builder: (context, state) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            title: 'Flutter Demo',
+            title: 'Zoomio_Driver_App',
             theme: ThemeData.light(), // Light theme
             darkTheme: ThemeData.dark(), // Dark theme
             themeMode: state == ThemeModeState.light

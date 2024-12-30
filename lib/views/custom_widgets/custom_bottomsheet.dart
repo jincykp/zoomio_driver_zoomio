@@ -293,4 +293,20 @@ class CustomBottomSheet extends StatelessWidget {
       ),
     );
   }
+
+  // Future<void> updateBookingStatusToOnTrip() async {
+  //   try {
+  //     // Reference to the specific booking in the Realtime Database
+  //     DatabaseReference bookingRef =
+  //         FirebaseDatabase.instance.ref().child('bookings/${widget.bookingId}');
+
+  //     // Update the status to "trip_started"
+  //     await bookingRef.update({'status': 'trip_started'});
+
+  //     print('Status updated to "trip_started" successfully');
+  //   } catch (e) {
+  //     print('Error updating status: $e');
+  //     throw e; // Rethrow the error to handle it in the caller
+  //   }
+  // }
 }

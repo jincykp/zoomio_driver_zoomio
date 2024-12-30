@@ -12,7 +12,6 @@ import 'package:zoomio_driverzoomio/data/services/driver_accepted_services.dart'
 import 'package:zoomio_driverzoomio/data/services/profile_services.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_bottomsheet.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_button.dart';
-import 'package:zoomio_driverzoomio/views/homepage_screens/accept/bloc/accept_button_bloc.dart';
 import 'package:zoomio_driverzoomio/views/push_notifications/notification_services.dart';
 import 'package:zoomio_driverzoomio/views/styles/app_styles.dart';
 import 'package:http/http.dart' as http;
@@ -30,6 +29,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isAppInitialized = false; // Flag to check if the app has initialized
   String realPickuplocation = '';
   String realDropOfflocation = '';
+  double totalPrice = 0.0;
+  String vehicleType = '';
   String? bookingId;
   bool isOnline = false; // Initial state of the switch
   final ProfileRepository profileRepository =
@@ -119,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
         FirebaseDatabase.instance.ref().child('bookings');
 
     _testRef.onValue.listen((event) {
-      print("DEBUG: Received Firebase event"); // Debug print
+      print("DEBUG: Received Firebase event");
 
       if (event.snapshot.exists) {
         Map<dynamic, dynamic>? bookingData;
@@ -130,19 +131,17 @@ class _HomeScreenState extends State<HomeScreen> {
           return;
         }
 
-        // Reset state if no pending bookings are found
         bool foundPendingBooking = false;
         String? pendingBookingId;
         String pendingPickupLocation = '';
         String pendingDropOffLocation = '';
+        double pendingTotalPrice = 0.0;
+        String pendingVehicleType = '';
 
-        // First find a valid pending booking
         bookingData.forEach((bookingKey, bookingDetails) {
           if (bookingDetails != null &&
               bookingDetails['status'] == 'pending' &&
               !foundPendingBooking) {
-            // Only take the first pending booking
-
             foundPendingBooking = true;
             pendingBookingId = bookingKey.toString();
             pendingPickupLocation =
@@ -150,12 +149,24 @@ class _HomeScreenState extends State<HomeScreen> {
             pendingDropOffLocation =
                 bookingDetails['dropOffLocation'] as String? ?? '';
 
-            print(
-                "DEBUG: Found pending booking: $pendingBookingId"); // Debug print
+            // Handle total price conversion
+            if (bookingDetails['totalPrice'] != null) {
+              if (bookingDetails['totalPrice'] is double) {
+                pendingTotalPrice = bookingDetails['totalPrice'];
+              } else {
+                pendingTotalPrice =
+                    double.tryParse(bookingDetails['totalPrice'].toString()) ??
+                        0.0;
+              }
+            }
+
+            pendingVehicleType = bookingDetails['vehicleType'] as String? ?? '';
+
+            print("DEBUG: Found pending booking: $pendingBookingId");
+            print("DEBUG: Fetched totalPrice: $pendingTotalPrice");
           }
         });
 
-        // Only update state once with final values
         setState(() {
           if (foundPendingBooking &&
               pendingBookingId != null &&
@@ -164,27 +175,31 @@ class _HomeScreenState extends State<HomeScreen> {
             bookingId = pendingBookingId;
             realPickuplocation = pendingPickupLocation;
             realDropOfflocation = pendingDropOffLocation;
+            totalPrice = pendingTotalPrice; // Set the total price
+            vehicleType = pendingVehicleType; // Set the vehicle type
 
-            print(
-                "DEBUG: Updated state with booking ID: $bookingId"); // Debug print
+            print("DEBUG: Updated state with booking ID: $bookingId");
+            print("DEBUG: Updated total price: $totalPrice");
           } else {
-            // Only clear if we don't have an active booking being processed
             if (bookingId == null || bookingId!.isEmpty) {
               bookingId = null;
               realPickuplocation = '';
               realDropOfflocation = '';
-              print("DEBUG: Cleared booking state"); // Debug print
+              totalPrice = 0.0;
+              vehicleType = '';
+              print("DEBUG: Cleared booking state");
             }
           }
         });
       } else {
-        // Only clear if we don't have an active booking being processed
         setState(() {
           if (bookingId == null || bookingId!.isEmpty) {
             bookingId = null;
             realPickuplocation = '';
             realDropOfflocation = '';
-            print("DEBUG: No snapshot exists, cleared state"); // Debug print
+            totalPrice = 0.0;
+            vehicleType = '';
+            print("DEBUG: No snapshot exists, cleared state");
           }
         });
       }
@@ -291,7 +306,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ? Colors.black
                                   : Colors.white,
                               child: Image.asset(
-                                "assets/images/yellow_car_original.png",
+                                vehicleType == 'car'
+                                    ? "assets/images/yellow_car_original.png"
+                                    : "assets/images/bike.png", // Replace with the actual bike image path
                                 fit: BoxFit.cover,
                               ),
                             ),
@@ -333,6 +350,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                               ],
+                            ),
+                            const Divider(
+                              thickness: 2,
+                              color: ThemeColors.baseColor,
+                            ),
+                            Text(
+                              "Total Price : ₹${totalPrice.toStringAsFixed(2)}", // Display totalPrice with 2 decimals
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             const Divider(
                               thickness: 2,
