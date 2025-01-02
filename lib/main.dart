@@ -38,7 +38,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(
           create: (context) => ThemeCubit(), // Create ThemeCubit
         ),
-        BlocProvider(
+        BlocProvider(                                                                                  
           create: (_) => SignUpBloc(AuthServices()), // Create SignUpBloc
         ),
         BlocProvider(

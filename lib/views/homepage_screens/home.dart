@@ -121,11 +121,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
     _testRef.onValue.listen((event) {
       print("DEBUG: Received Firebase event");
-
       if (event.snapshot.exists) {
-        Map<dynamic, dynamic>? bookingData;
+        Map? bookingData;
         try {
-          bookingData = event.snapshot.value as Map<dynamic, dynamic>;
+          bookingData = event.snapshot.value as Map;
         } catch (e) {
           print("DEBUG: Error casting snapshot value: $e");
           return;
@@ -142,28 +141,37 @@ class _HomeScreenState extends State<HomeScreen> {
           if (bookingDetails != null &&
               bookingDetails['status'] == 'pending' &&
               !foundPendingBooking) {
+            // Access vehicleDetails
+            Map? vehicleDetails = bookingDetails['vehicleDetails'] as Map?;
+            if (vehicleDetails != null) {
+              // Get totalPrice from vehicleDetails
+              var rawPrice = vehicleDetails['totalPrice'];
+              print("DEBUG: Raw price value from vehicleDetails: $rawPrice");
+
+              if (rawPrice != null) {
+                if (rawPrice is int) {
+                  pendingTotalPrice = rawPrice.toDouble();
+                } else if (rawPrice is double) {
+                  pendingTotalPrice = rawPrice;
+                } else if (rawPrice is String) {
+                  pendingTotalPrice = double.tryParse(rawPrice) ?? 0.0;
+                }
+                print("DEBUG: Converted price value: $pendingTotalPrice");
+              }
+
+              // Get vehicleType from vehicleDetails
+              pendingVehicleType =
+                  vehicleDetails['vehicleType']?.toString() ?? '';
+              print(
+                  "DEBUG: Vehicle type from vehicleDetails: $pendingVehicleType");
+            }
+
             foundPendingBooking = true;
             pendingBookingId = bookingKey.toString();
             pendingPickupLocation =
                 bookingDetails['pickupLocation'] as String? ?? '';
             pendingDropOffLocation =
                 bookingDetails['dropOffLocation'] as String? ?? '';
-
-            // Handle total price conversion
-            if (bookingDetails['totalPrice'] != null) {
-              if (bookingDetails['totalPrice'] is double) {
-                pendingTotalPrice = bookingDetails['totalPrice'];
-              } else {
-                pendingTotalPrice =
-                    double.tryParse(bookingDetails['totalPrice'].toString()) ??
-                        0.0;
-              }
-            }
-
-            pendingVehicleType = bookingDetails['vehicleType'] as String? ?? '';
-
-            print("DEBUG: Found pending booking: $pendingBookingId");
-            print("DEBUG: Fetched totalPrice: $pendingTotalPrice");
           }
         });
 
@@ -175,31 +183,10 @@ class _HomeScreenState extends State<HomeScreen> {
             bookingId = pendingBookingId;
             realPickuplocation = pendingPickupLocation;
             realDropOfflocation = pendingDropOffLocation;
-            totalPrice = pendingTotalPrice; // Set the total price
-            vehicleType = pendingVehicleType; // Set the vehicle type
-
-            print("DEBUG: Updated state with booking ID: $bookingId");
-            print("DEBUG: Updated total price: $totalPrice");
-          } else {
-            if (bookingId == null || bookingId!.isEmpty) {
-              bookingId = null;
-              realPickuplocation = '';
-              realDropOfflocation = '';
-              totalPrice = 0.0;
-              vehicleType = '';
-              print("DEBUG: Cleared booking state");
-            }
-          }
-        });
-      } else {
-        setState(() {
-          if (bookingId == null || bookingId!.isEmpty) {
-            bookingId = null;
-            realPickuplocation = '';
-            realDropOfflocation = '';
-            totalPrice = 0.0;
-            vehicleType = '';
-            print("DEBUG: No snapshot exists, cleared state");
+            totalPrice = pendingTotalPrice;
+            vehicleType = pendingVehicleType;
+            print("DEBUG: Vehicle Type updated: $vehicleType");
+            print("DEBUG: Updated state with total price: $totalPrice");
           }
         });
       }
@@ -234,8 +221,10 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Driver is online: $isOnline');
       print('Pickup Location: $realPickuplocation');
       print('Dropoff Location: $realDropOfflocation');
+      print("Vehicle Type is: $vehicleType");
       print(
           'Should show container: ${isOnline && realPickuplocation.isNotEmpty && realDropOfflocation.isNotEmpty}');
+
       double screenWidth = MediaQuery.of(context).size.width;
       double screenHeight = MediaQuery.of(context).size.height;
 
@@ -306,9 +295,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ? Colors.black
                                   : Colors.white,
                               child: Image.asset(
-                                vehicleType == 'car'
+                                vehicleType.toLowerCase() == 'car'
                                     ? "assets/images/yellow_car_original.png"
-                                    : "assets/images/bike.png", // Replace with the actual bike image path
+                                    : "assets/images/bike.png",
                                 fit: BoxFit.cover,
                               ),
                             ),
@@ -351,6 +340,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ],
                             ),
+                            const SizedBox(
+                              height: 10,
+                            ),
                             const Divider(
                               thickness: 2,
                               color: ThemeColors.baseColor,
@@ -363,6 +355,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             const Divider(
                               thickness: 2,
                               color: ThemeColors.baseColor,
+                            ),
+                            const SizedBox(
+                              height: 10,
                             ),
                             Row(
                               children: [
@@ -460,6 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                         realPickuplocation,
                                                     dropoffLocation:
                                                         realDropOfflocation,
+                                                    totalPrice: totalPrice,
                                                   ),
                                                 ),
                                               );

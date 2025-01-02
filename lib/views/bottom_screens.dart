@@ -26,8 +26,8 @@ class _BottomScreensState extends State<BottomScreens> {
   final List<Widget> _screens = [
     // Replace these with your actual screen widgets
     HomeScreen(),
-    NotificationsScreen(),
-    ProfileScreen(userId: ''),
+    const NotificationsScreen(),
+    const ProfileScreen(userId: ''),
   ];
 
   void _onItemTapped(int index) {

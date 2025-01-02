@@ -10,13 +10,15 @@ class CustomBottomSheet extends StatelessWidget {
   final String bookingId;
   final String pickupLocation;
   final String dropoffLocation;
+  final double totalPrice;
 
-  const CustomBottomSheet({
-    Key? key,
-    required this.bookingId,
-    required this.pickupLocation,
-    required this.dropoffLocation,
-  }) : super(key: key);
+  const CustomBottomSheet(
+      {Key? key,
+      required this.bookingId,
+      required this.pickupLocation,
+      required this.dropoffLocation,
+      required this.totalPrice})
+      : super(key: key);
 
   Future<Map<String, String>> _getUserDetails() async {
     try {
@@ -253,10 +255,11 @@ class CustomBottomSheet extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (context) => RoadLinesScreen(
-                                  pickupLocation: pickupLocation,
-                                  dropoffLocation: dropoffLocation,
-                                  userDetails:
-                                      userDetails), // Replace with your desired screen
+                                pickupLocation: pickupLocation,
+                                dropoffLocation: dropoffLocation,
+                                userDetails: userDetails,
+                                totalPrice: totalPrice,
+                              ), // Replace with your desired screen
                             ),
                           );
                         } catch (e) {
