@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_button.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/road_line.dart';
 import 'package:zoomio_driverzoomio/views/styles/app_styles.dart';
@@ -173,7 +174,8 @@ class CustomBottomSheet extends StatelessWidget {
                       ),
                       const Spacer(),
                       IconButton(
-                          onPressed: () {},
+                          onPressed: () => _makePhoneCall(
+                              context, userDetails['phone'] ?? 'Not available'),
                           icon: const Icon(
                             Icons.phone,
                             size: 30,
@@ -297,19 +299,50 @@ class CustomBottomSheet extends StatelessWidget {
     );
   }
 
-  // Future<void> updateBookingStatusToOnTrip() async {
-  //   try {
-  //     // Reference to the specific booking in the Realtime Database
-  //     DatabaseReference bookingRef =
-  //         FirebaseDatabase.instance.ref().child('bookings/${widget.bookingId}');
+  // Add function to make phone call
+  Future<void> _makePhoneCall(BuildContext context, String phoneNumber) async {
+    print('DEBUG: Attempting to call phone number: $phoneNumber');
 
-  //     // Update the status to "trip_started"
-  //     await bookingRef.update({'status': 'trip_started'});
+    if (phoneNumber == 'Not available') {
+      print('DEBUG: Phone number not available');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Phone number not available'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
-  //     print('Status updated to "trip_started" successfully');
-  //   } catch (e) {
-  //     print('Error updating status: $e');
-  //     throw e; // Rethrow the error to handle it in the caller
-  //   }
-  // }
+    // Format phone number with proper URI encoding
+    phoneNumber = phoneNumber.replaceAll(RegExp(r'\s+'), '');
+    final Uri phoneUri = Uri.parse('tel:${Uri.encodeComponent(phoneNumber)}');
+    print('DEBUG: Phone URI: $phoneUri');
+
+    try {
+      print('DEBUG: Attempting to launch URL directly...');
+      final launched =
+          await launchUrl(phoneUri, mode: LaunchMode.externalApplication);
+      print('DEBUG: Launch result: $launched');
+
+      if (!launched && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not launch phone app'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('DEBUG: Error in _makePhoneCall: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error making phone call: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 }
