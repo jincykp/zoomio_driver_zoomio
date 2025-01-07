@@ -261,6 +261,7 @@ class CustomBottomSheet extends StatelessWidget {
                                 dropoffLocation: dropoffLocation,
                                 userDetails: userDetails,
                                 totalPrice: totalPrice,
+                                bookingId: bookingId,
                               ), // Replace with your desired screen
                             ),
                           );

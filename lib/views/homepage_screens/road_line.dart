@@ -1,10 +1,10 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:zoomio_driverzoomio/views/bottom_screens.dart';
 import 'dart:convert';
-
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_button.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/home.dart';
 import 'package:zoomio_driverzoomio/views/styles/app_styles.dart';
@@ -14,6 +14,7 @@ class RoadLinesScreen extends StatefulWidget {
   final String dropoffLocation;
   final Map<String, String> userDetails;
   final double totalPrice;
+  final String bookingId;
 
   const RoadLinesScreen({
     super.key,
@@ -21,6 +22,7 @@ class RoadLinesScreen extends StatefulWidget {
     required this.dropoffLocation,
     required this.userDetails,
     required this.totalPrice,
+    required this.bookingId,
   });
 
   @override
@@ -28,6 +30,9 @@ class RoadLinesScreen extends StatefulWidget {
 }
 
 class _RoadLinesScreenState extends State<RoadLinesScreen> {
+  final DatabaseReference _bookingRef =
+      FirebaseDatabase.instance.ref().child('bookings');
+
   List<LatLng> routePoints = [];
   // Kerala coordinates
   final LatLng keralaLocation = const LatLng(10.8505, 76.2711);
@@ -72,6 +77,63 @@ class _RoadLinesScreenState extends State<RoadLinesScreen> {
       }
     } catch (e) {
       print('Error fetching route: $e');
+    }
+  }
+
+  Future<void> updateBookingStatus(String bookingId, String status) async {
+    try {
+      await _bookingRef.child(bookingId).update({
+        'status': status,
+        'completedAt': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      throw Exception('Failed to update booking status: $e');
+    }
+  }
+
+  Future<void> handleTripCompletion() async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
+      // Update booking status to completed
+      await updateBookingStatus(widget.bookingId, 'trip completed');
+
+      // Remove loading indicator
+      Navigator.pop(context);
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Trip completed successfully!'),
+          backgroundColor: ThemeColors.successColor,
+        ),
+      );
+
+      // Navigate to bottom screens
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => BottomScreens()),
+      );
+    } catch (e) {
+      // Remove loading indicator
+      Navigator.pop(context);
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to complete trip: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -231,12 +293,7 @@ class _RoadLinesScreenState extends State<RoadLinesScreen> {
                     const SizedBox(height: 10),
                     CustomButtons(
                         text: 'Trip Completed',
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => BottomScreens()));
-                        },
+                        onPressed: handleTripCompletion,
                         backgroundColor: ThemeColors.primaryColor,
                         textColor: ThemeColors.textColor,
                         screenWidth: screenWidth,

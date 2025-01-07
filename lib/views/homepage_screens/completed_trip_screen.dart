@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-class NotificationsScreen extends StatelessWidget {
-  const NotificationsScreen({super.key});
+class CompletedTripScreen extends StatelessWidget {
+  const CompletedTripScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Text(""),
+      body: Text("nnnnn"),
     );
   }
 }

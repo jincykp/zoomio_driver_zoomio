@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:zoomio_driverzoomio/data/services/auth_services.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/home.dart';
-import 'package:zoomio_driverzoomio/views/homepage_screens/notifications.dart';
+import 'package:zoomio_driverzoomio/views/homepage_screens/completed_trip_screen.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/profile.dart';
 
 import 'package:zoomio_driverzoomio/views/styles/app_styles.dart';
@@ -26,7 +26,7 @@ class _BottomScreensState extends State<BottomScreens> {
   final List<Widget> _screens = [
     // Replace these with your actual screen widgets
     HomeScreen(),
-    const NotificationsScreen(),
+    const CompletedTripScreen(),
     const ProfileScreen(userId: ''),
   ];
 
@@ -63,8 +63,8 @@ class _BottomScreensState extends State<BottomScreens> {
                 text: "Home",
               ),
               GButton(
-                icon: Icons.notifications,
-                text: "Notifications",
+                icon: Icons.history,
+                text: "Completed Trips",
               ),
               GButton(
                 icon: Icons.person,
