@@ -1,20 +1,20 @@
-// google_sign_in_state.dart
-import 'package:firebase_auth/firebase_auth.dart';
+// // google_sign_in_state.dart
+// import 'package:firebase_auth/firebase_auth.dart';
 
-abstract class GoogleSignInState {}
+// abstract class GoogleSignInState {}
 
-class GoogleSignInInitial extends GoogleSignInState {}
+// class GoogleSignInInitial extends GoogleSignInState {}
 
-class GoogleSignInLoading extends GoogleSignInState {}
+// class GoogleSignInLoading extends GoogleSignInState {}
 
-class GoogleSignInSuccess extends GoogleSignInState {
-  final User user;
+// class GoogleSignInSuccess extends GoogleSignInState {
+//   final User user;
 
-  GoogleSignInSuccess(this.user);
-}
+//   GoogleSignInSuccess(this.user);
+// }
 
-class GoogleSignInFailure extends GoogleSignInState {
-  final String errorMessage;
+// class GoogleSignInFailure extends GoogleSignInState {
+//   final String errorMessage;
 
-  GoogleSignInFailure(this.errorMessage);
-}
+//   GoogleSignInFailure(this.errorMessage);
+// }

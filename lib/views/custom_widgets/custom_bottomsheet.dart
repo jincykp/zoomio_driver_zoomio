@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:zoomio_driverzoomio/views/chat/chat_screen.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_button.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/road_line.dart';
 import 'package:zoomio_driverzoomio/views/styles/app_styles.dart';
@@ -182,12 +183,67 @@ class CustomBottomSheet extends StatelessWidget {
                             color: ThemeColors.baseColor,
                           )),
                       IconButton(
-                          onPressed: () {},
-                          icon: const Icon(
-                            Icons.message,
-                            size: 30,
-                            color: ThemeColors.primaryColor,
-                          )),
+                        onPressed: () async {
+                          try {
+                            // Get booking data from Firebase
+                            final DatabaseReference bookingsRef =
+                                FirebaseDatabase.instance
+                                    .ref()
+                                    .child('bookings');
+                            final DatabaseEvent bookingEvent =
+                                await bookingsRef.child(bookingId).once();
+
+                            if (bookingEvent.snapshot.value == null) {
+                              print("DEBUG: Booking not found");
+                              return;
+                            }
+
+                            // Convert booking data to Map
+                            final bookingData = Map<String, dynamic>.from(
+                                bookingEvent.snapshot.value as Map);
+                            final userId = bookingData['userId'];
+
+                            // Get user data from Firestore
+                            final userDoc = await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(userId)
+                                .get();
+
+                            if (!userDoc.exists) {
+                              print("DEBUG: User not found");
+                              return;
+                            }
+
+                            final userData = userDoc.data()!;
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DriverChatScreen(
+                                  userId: userId,
+                                  userEmail: userData['email'] ?? '',
+                                  bookingId: bookingId,
+                                  userName: userData['displayName'],
+                                ),
+                              ),
+                            );
+                          } catch (e) {
+                            print("DEBUG: Error navigating to chat: $e");
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Unable to open chat at this time'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(
+                          Icons.message,
+                          size: 30,
+                          color: ThemeColors.primaryColor,
+                        ),
+                      ),
                     ],
                   ),
                   const Divider(),
