@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:zoomio_driverzoomio/views/chat/chat_bubble.dart';
-import 'package:zoomio_driverzoomio/views/chat/chat_services.dart';
+import 'package:zoomio_driverzoomio/views/chat_screens/chat_bubble.dart';
+import 'package:zoomio_driverzoomio/views/chat_screens/chat_services.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_messaging_textfield.dart';
 import 'package:zoomio_driverzoomio/views/styles/app_styles.dart';
 

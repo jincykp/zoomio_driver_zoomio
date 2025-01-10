@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:zoomio_driverzoomio/views/bottom_screens.dart';
+import 'package:zoomio_driverzoomio/views/chat_screens/chat_screen.dart';
 import 'dart:convert';
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_button.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/home.dart';
@@ -251,17 +253,24 @@ class _RoadLinesScreenState extends State<RoadLinesScreen> {
                             child: Row(
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.message),
-                                  onPressed: () {
-                                    // Handle message icon press
-                                    print('Message icon pressed');
-                                  },
-                                  iconSize: 30,
-                                  color: Colors.blue,
-                                ),
-                                IconButton(
                                   icon: const Icon(Icons.call),
-                                  onPressed: () {},
+                                  onPressed: () async {
+                                    final phoneNumber =
+                                        widget.userDetails['phone'] ?? '';
+                                    final url = 'tel:$phoneNumber';
+                                    if (await canLaunch(url)) {
+                                      await launch(url);
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                              'Could not launch the phone call.'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  },
                                   iconSize: 30,
                                   color: ThemeColors.successColor,
                                 ),

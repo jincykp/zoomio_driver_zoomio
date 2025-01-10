@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:zoomio_driverzoomio/views/chat/chat_screen.dart';
+import 'package:zoomio_driverzoomio/views/chat_screens/chat_screen.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_button.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/road_line.dart';
 import 'package:zoomio_driverzoomio/views/styles/app_styles.dart';

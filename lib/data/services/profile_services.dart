@@ -21,10 +21,13 @@ class ProfileRepository {
         throw Exception('No authenticated user found. Please log in.');
       }
 
+      // Set the 'id' field of profile to match the Firestore document ID (userId)
+      final profileToSave = profileModel.copyWith(id: userId);
+
+      // Save the profile data to Firestore
       final driverProfileCollection = _firestore.collection("driverProfiles");
 
-      // Add or update the profile using the Firestore document ID as `userId`
-      final profileToSave = profileModel.copyWith(id: userId);
+      // Use the userId as the document ID to ensure consistency
       await driverProfileCollection
           .doc(userId)
           .set(profileToSave.toMap(), SetOptions(merge: true));

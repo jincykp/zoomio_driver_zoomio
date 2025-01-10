@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:zoomio_driverzoomio/data/model/profile_model.dart';
 import 'package:zoomio_driverzoomio/data/services/driver_accepted_services.dart';
 import 'package:zoomio_driverzoomio/data/services/profile_services.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_bottomsheet.dart';
@@ -26,6 +27,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   List<LatLng> polylinePoints = [];
+  ProfileModel? driverProfile;
   bool _isAppInitialized = false; // Flag to check if the app has initialized
   String realPickuplocation = '';
   String realDropOfflocation = '';
@@ -42,66 +44,78 @@ class _HomeScreenState extends State<HomeScreen> {
   final MapController mapController = MapController(); // Map controller
   // Function to fetch the current location
   Future<void> fetchCurrentLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    // Check if location services are enabled
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      print('Location services are disabled.');
-      return;
-    }
-
-    // Check for location permissions
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        print('Location permissions are denied.');
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location services are disabled.')),
+          );
+        }
         return;
       }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permissions are denied.')),
+            );
+          }
+          return;
+        }
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+
+      if (mounted) {
+        setState(() {
+          currentLocation = LatLng(position.latitude, position.longitude);
+          // Move map to current location
+          mapController.move(currentLocation!, 15.0);
+        });
+        print(
+            "DEBUG: Current location updated: ${position.latitude}, ${position.longitude}");
+      }
+    } catch (e) {
+      print("DEBUG: Error fetching location: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error getting location: $e')),
+        );
+      }
     }
-
-    if (permission == LocationPermission.deniedForever) {
-      print(
-          'Location permissions are permanently denied. We cannot request permissions.');
-      return;
-    }
-
-    // Fetch the user's current location
-    Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
-
-    setState(() {
-      currentLocation = LatLng(position.latitude, position.longitude);
-    });
-
-    // Move the map to the current location
-    mapController.move(currentLocation!, 15.0); // Adjust zoom as needed
   }
 
   // Function to handle the toggle change and update Firebase
   Future<void> toggleStatus(bool value) async {
-    setState(() {
-      isOnline = value;
-    });
-
     try {
+      setState(() {
+        isOnline = value;
+      });
+
       await profileRepository.updateDriverStatus(value);
       context.read<DriverStatusBloc>().add(UpdateDriverStatus(value));
 
       if (value) {
+        print("DEBUG: Driver went online, starting booking listener");
+        await fetchDriverProfile(); // Refresh profile data
         listenToPickUpLocation();
       } else {
+        print("DEBUG: Driver went offline, canceling listener");
         _cancelPreviousRideRequestListener();
         setState(() {
           realPickuplocation = '';
           realDropOfflocation = '';
+          vehicleType = '';
+          bookingId = null;
         });
       }
     } catch (e) {
       print('Error updating driver status: $e');
-      // Revert the local state if there's an error
       setState(() {
         isOnline = !value;
       });
@@ -115,96 +129,159 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void listenToPickUpLocation() {
+    if (driverProfile == null) {
+      print("DEBUG: Cannot listen for rides - driver profile not loaded");
+      return;
+    }
+
     _cancelPreviousRideRequestListener();
     DatabaseReference _testRef =
         FirebaseDatabase.instance.ref().child('bookings');
 
+    print("DEBUG: Starting ride listener for ${driverProfile?.name}");
+    print(
+        "DEBUG: Driver vehicle preference: ${driverProfile?.vehiclePreference}");
+
     _testRef.onValue.listen((event) {
-      print("DEBUG: Received Firebase event");
-      if (event.snapshot.exists) {
-        Map? bookingData;
-        try {
-          bookingData = event.snapshot.value as Map;
-        } catch (e) {
-          print("DEBUG: Error casting snapshot value: $e");
-          return;
-        }
-
-        bool foundPendingBooking = false;
-        String? pendingBookingId;
-        String pendingPickupLocation = '';
-        String pendingDropOffLocation = '';
-        double pendingTotalPrice = 0.0;
-        String pendingVehicleType = '';
-
-        bookingData.forEach((bookingKey, bookingDetails) {
-          if (bookingDetails != null &&
-              bookingDetails['status'] == 'pending' &&
-              !foundPendingBooking) {
-            // Access vehicleDetails
-            Map? vehicleDetails = bookingDetails['vehicleDetails'] as Map?;
-            if (vehicleDetails != null) {
-              // Get totalPrice from vehicleDetails
-              var rawPrice = vehicleDetails['totalPrice'];
-              print("DEBUG: Raw price value from vehicleDetails: $rawPrice");
-
-              if (rawPrice != null) {
-                if (rawPrice is int) {
-                  pendingTotalPrice = rawPrice.toDouble();
-                } else if (rawPrice is double) {
-                  pendingTotalPrice = rawPrice;
-                } else if (rawPrice is String) {
-                  pendingTotalPrice = double.tryParse(rawPrice) ?? 0.0;
-                }
-                print("DEBUG: Converted price value: $pendingTotalPrice");
-              }
-
-              // Get vehicleType from vehicleDetails
-              pendingVehicleType =
-                  vehicleDetails['vehicleType']?.toString() ?? '';
-              print(
-                  "DEBUG: Vehicle type from vehicleDetails: $pendingVehicleType");
-            }
-
-            foundPendingBooking = true;
-            pendingBookingId = bookingKey.toString();
-            pendingPickupLocation =
-                bookingDetails['pickupLocation'] as String? ?? '';
-            pendingDropOffLocation =
-                bookingDetails['dropOffLocation'] as String? ?? '';
-          }
-        });
-
-        setState(() {
-          if (foundPendingBooking &&
-              pendingBookingId != null &&
-              pendingPickupLocation.isNotEmpty &&
-              pendingDropOffLocation.isNotEmpty) {
-            bookingId = pendingBookingId;
-            realPickuplocation = pendingPickupLocation;
-            realDropOfflocation = pendingDropOffLocation;
-            totalPrice = pendingTotalPrice;
-            vehicleType = pendingVehicleType;
-            print("DEBUG: Vehicle Type updated: $vehicleType");
-            print("DEBUG: Updated state with total price: $totalPrice");
-          }
-        });
+      print("DEBUG: Received booking update");
+      if (!event.snapshot.exists) {
+        print("DEBUG: No bookings found");
+        return;
       }
+
+      try {
+        Map bookingData = event.snapshot.value as Map;
+        print("DEBUG: Found ${bookingData.length} bookings to check");
+
+        bookingData.forEach((key, value) {
+          if (value['status']?.toString().toLowerCase() != 'pending') {
+            print("DEBUG: Skipping non-pending booking $key");
+            return;
+          }
+
+          String? requestedVehicleType = value['vehicleDetails']?['vehicleType']
+              ?.toString()
+              .trim()
+              .toLowerCase();
+
+          if (requestedVehicleType == null) {
+            print("DEBUG: Skipping booking $key - no vehicle type");
+            return;
+          }
+
+          String driverVehicle =
+              driverProfile!.vehiclePreference?.toLowerCase() ?? '';
+          print(
+              "DEBUG: Checking booking $key - Request: $requestedVehicleType, Driver preference: $driverVehicle");
+
+          bool shouldShowRequest = false;
+
+          // Explicit vehicle type matching logic
+          switch (driverVehicle) {
+            case 'car':
+              shouldShowRequest = (requestedVehicleType == 'car');
+              break;
+            case 'bike':
+              shouldShowRequest = (requestedVehicleType == 'bike');
+              break;
+            case 'both':
+              shouldShowRequest = (requestedVehicleType == 'car' ||
+                  requestedVehicleType == 'bike');
+              break;
+            default:
+              print("DEBUG: Invalid driver vehicle preference: $driverVehicle");
+              return;
+          }
+
+          if (shouldShowRequest) {
+            print("DEBUG: Found matching ride! Updating state");
+            setState(() {
+              bookingId = key;
+              realPickuplocation = value['pickupLocation']?.toString() ?? '';
+              realDropOfflocation = value['dropOffLocation']?.toString() ?? '';
+              totalPrice =
+                  double.tryParse(value['totalPrice']?.toString() ?? '0.0') ??
+                      0.0;
+              vehicleType = requestedVehicleType;
+
+              // Print booking details
+              print("DEBUG: Booking Details:");
+              print("  Booking ID: $bookingId");
+              print("  Pickup Location: $realPickuplocation");
+              print("  Drop-off Location: $realDropOfflocation");
+              print("  Total Price: $totalPrice");
+              print("  Vehicle Type: $vehicleType");
+            });
+          } else {
+            print("DEBUG: Skipping non-matching vehicle type for booking $key");
+          }
+        });
+      } catch (e) {
+        print("DEBUG: Error processing bookings: $e");
+        print(e.toString());
+      }
+    }, onError: (error) {
+      print("DEBUG: Booking listener error: $error");
     });
+  }
+
+  Future<void> fetchDriverProfile() async {
+    try {
+      final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+      if (currentUserId.isEmpty) {
+        print("DEBUG: User not authenticated");
+        return;
+      }
+
+      print("DEBUG: Fetching profile for driver: $currentUserId");
+
+      final docSnapshot = await FirebaseFirestore.instance
+          .collection('driverProfiles')
+          .doc(currentUserId)
+          .get();
+
+      if (!docSnapshot.exists) {
+        print("DEBUG: No driver profile found");
+        return;
+      }
+
+      final data = docSnapshot.data();
+      if (data != null) {
+        setState(() {
+          driverProfile = ProfileModel.fromMap(data, docId: currentUserId);
+        });
+
+        print("DEBUG: Driver profile fetched successfully");
+        print("DEBUG: Name: ${driverProfile?.name}");
+        print("DEBUG: Vehicle Preference: ${driverProfile?.vehiclePreference}");
+        print("DEBUG: Experience: ${driverProfile?.experienceYears}");
+      }
+    } catch (e) {
+      print("DEBUG: Error fetching driver profile: $e");
+    }
+  }
+
+  Future<void> initializeDriver() async {
+    await fetchDriverProfile(); // Wait for profile to be fetched
+
+    // Only start listening if driver is online
+    if (isOnline && driverProfile != null) {
+      print("DEBUG: Starting ride listener after profile fetch");
+      listenToPickUpLocation();
+    } else {
+      print(
+          "DEBUG: Not starting listener - Online: $isOnline, Profile: ${driverProfile != null}");
+    }
   }
 
   @override
   void initState() {
+    // TODO: implement initState
     super.initState();
     fetchCurrentLocation();
-    listenToPickUpLocation();
-    notificationServices.requestNotificationPermission();
 
-    // Delay the initialization to prevent showing the ride request container prematurely
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _isAppInitialized = true;
-      // listenToDriverStatus(); // Start listening to driver status after initialization
-    });
+    // Initialize async setup
+    initializeDriver();
   }
 
   @override
@@ -218,10 +295,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return BlocBuilder<DriverStatusBloc, DriverStatusState>(
         builder: (context, state) {
       isOnline = state is DriverStatusUpdated ? state.isOnline : false;
+      print('DEBUG: Build method states:');
       print('Driver is online: $isOnline');
+      print('Current Location: $currentLocation');
       print('Pickup Location: $realPickuplocation');
       print('Dropoff Location: $realDropOfflocation');
-      print("Vehicle Type is: $vehicleType");
+      print('Vehicle Type: $vehicleType');
+      // print('Booking ID: $bookingId');
       print(
           'Should show container: ${isOnline && realPickuplocation.isNotEmpty && realDropOfflocation.isNotEmpty}');
 
