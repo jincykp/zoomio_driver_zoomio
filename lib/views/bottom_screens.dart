@@ -23,12 +23,12 @@ class _BottomScreensState extends State<BottomScreens> {
   int _selectedIndex = 0;
   String driverId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
-  final List<Widget> _screens = [
-    // Replace these with your actual screen widgets
-    HomeScreen(),
-    const CompletedTripScreen(),
-    const ProfileScreen(userId: ''),
-  ];
+  // Use a getter instead of a fixed list
+  List<Widget> get _screens => [
+        HomeScreen(),
+        CompletedTripScreen(driverId: driverId),
+        ProfileScreen(userId: driverId),
+      ];
 
   void _onItemTapped(int index) {
     setState(() {

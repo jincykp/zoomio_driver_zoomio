@@ -130,16 +130,10 @@ class ProfileScreen extends StatelessWidget {
                       style:
                           GoogleFonts.alikeAngular(fontWeight: FontWeight.bold),
                     ),
-                    // const SizedBox(height: 10),
-                    // CustomListTileCard(
-                    //   leadingIcon: Icons.star,
-                    //   title: "Ratings ",
-                    //   onTap: () {},
-                    // ),
                     const SizedBox(height: 10),
                     CustomListTileCard(
-                      leadingIcon: Icons.history,
-                      title: "Ride History",
+                      leadingIcon: Icons.privacy_tip,
+                      title: "Privacy Policy",
                       onTap: () {},
                     ),
                     const SizedBox(height: 10),

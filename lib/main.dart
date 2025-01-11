@@ -8,6 +8,7 @@ import 'package:zoomio_driverzoomio/data/services/profile_services.dart';
 import 'package:zoomio_driverzoomio/firebase_options.dart';
 import 'package:zoomio_driverzoomio/views/auth_screens/bloc/sign_up_bloc.dart';
 import 'package:zoomio_driverzoomio/views/bloc/themestate/thememode.dart';
+import 'package:zoomio_driverzoomio/views/homepage_screens/bloc/completed_trip_bloc.dart';
 
 import 'package:zoomio_driverzoomio/views/profile_screens/bloc/driver_profile_bloc.dart';
 import 'package:zoomio_driverzoomio/views/splash_screen.dart';
@@ -38,7 +39,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(
           create: (context) => ThemeCubit(), // Create ThemeCubit
         ),
-        BlocProvider(                                                                                  
+        BlocProvider(
           create: (_) => SignUpBloc(AuthServices()), // Create SignUpBloc
         ),
         BlocProvider(
@@ -49,6 +50,10 @@ class MyApp extends StatelessWidget {
           create: (context) => DriverStatusBloc(context
               .read<ProfileRepository>()), // Use the provided ProfileRepository
         ),
+        BlocProvider(
+          create: (context) =>
+              CompletedTripsBloc(), // Use the provided ProfileRepository
+        )
       ],
       child: BlocBuilder<ThemeCubit, ThemeModeState>(
         // Build the app based on the current theme

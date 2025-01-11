@@ -290,6 +290,75 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  Future<void> driverCancelRide(
+      String driverId, List<String> reasons, String otherReason) async {
+    try {
+      if (bookingId == null) {
+        throw Exception('Booking ID is null');
+      }
+
+      // Create the cancellation details
+      Map<String, dynamic> driverCancellationDetails = {
+        'driverId': driverId, // The ID of the driver who canceled
+        'reasonsList': reasons, // Reasons for cancellation
+        'otherReason':
+            otherReason.isNotEmpty ? otherReason : null, // Additional reason
+        'cancelledAt': ServerValue.timestamp, // Timestamp of cancellation
+      };
+
+      // Update the Firebase database
+      await FirebaseDatabase.instance
+          .ref()
+          .child('bookings')
+          .child(bookingId!)
+          .child(
+              'driverCancellation') // Add data under "driverCancellation" field
+          .set(driverCancellationDetails);
+
+      if (mounted && context.mounted) {
+        // Pop any existing dialogs first
+        Navigator.of(context).popUntil((route) => route.isFirst);
+
+        // Show success dialog
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return WillPopScope(
+              onWillPop: () async => false,
+              child: AlertDialog(
+                backgroundColor: Colors.grey.shade900,
+                title: const Text(
+                  'Ride Cancelled',
+                  style: TextStyle(color: Colors.white),
+                ),
+                content: const Text(
+                  'You have successfully logged your cancellation.',
+                  style: TextStyle(color: Colors.white),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child:
+                        const Text('OK', style: TextStyle(color: Colors.blue)),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      }
+    } catch (e) {
+      // Handle error and show error message
+      print('Error cancelling ride: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to log cancellation. Please try again.'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DriverStatusBloc, DriverStatusState>(
@@ -444,7 +513,77 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Expanded(
                                   child: CustomButtons(
                                     text: "CANCEL",
-                                    onPressed: () {},
+                                    onPressed: () async {
+                                      final driverId = FirebaseAuth
+                                          .instance.currentUser?.uid;
+                                      if (driverId == null) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                              content:
+                                                  Text('Not authenticated')),
+                                        );
+                                        return;
+                                      }
+
+                                      // Show confirmation dialog
+                                      final bool? confirm =
+                                          await showDialog<bool>(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            title: const Text('Cancel Ride'),
+                                            content: const Text(
+                                                'Are you sure you want to cancel this ride?'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.of(context)
+                                                        .pop(false),
+                                                child: const Text('NO'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.of(context)
+                                                        .pop(true),
+                                                child: const Text('YES'),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+
+                                      if (confirm != true || !mounted) return;
+
+                                      List<String> reasons = [
+                                        'Customer not responding'
+                                      ];
+                                      String otherReason = '';
+
+                                      try {
+                                        // Call driverCancelRide directly since it's a class method
+                                        await driverCancelRide(
+                                            driverId, reasons, otherReason);
+
+                                        if (!mounted) return;
+
+                                        setState(() {
+                                          realPickuplocation = '';
+                                          realDropOfflocation = '';
+                                          vehicleType = '';
+                                          bookingId = null;
+                                        });
+                                      } catch (e) {
+                                        if (!mounted) return;
+
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: Text(
+                                                  'Failed to cancel ride: ${e.toString()}')),
+                                        );
+                                      }
+                                    },
                                     backgroundColor: ThemeColors.alertColor,
                                     textColor: ThemeColors.textColor,
                                     screenWidth: screenWidth,
