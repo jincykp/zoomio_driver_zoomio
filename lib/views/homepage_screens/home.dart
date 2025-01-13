@@ -135,30 +135,52 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     _cancelPreviousRideRequestListener();
-    DatabaseReference _testRef =
+
+    DatabaseReference bookingsRef =
         FirebaseDatabase.instance.ref().child('bookings');
+    final String driverId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    DatabaseReference cancelledBookingsRef = FirebaseDatabase.instance
+        .ref()
+        .child('driverCancelledBookings')
+        .child(driverId);
 
     print("DEBUG: Starting ride listener for ${driverProfile?.name}");
-    print(
-        "DEBUG: Driver vehicle preference: ${driverProfile?.vehiclePreference}");
 
-    _testRef.onValue.listen((event) {
+    bookingsRef.onValue.listen((event) async {
       print("DEBUG: Received booking update");
+
       if (!event.snapshot.exists) {
         print("DEBUG: No bookings found");
         return;
       }
 
       try {
+        // Get the driver's cancelled bookings
+        final cancelledBookingsSnapshot = await cancelledBookingsRef.get();
+        Set<String> cancelledBookingIds = {};
+
+        if (cancelledBookingsSnapshot.exists) {
+          final cancelledData = cancelledBookingsSnapshot.value as Map;
+          cancelledBookingIds = cancelledData.keys.toSet().cast<String>();
+        }
+
         Map bookingData = event.snapshot.value as Map;
         print("DEBUG: Found ${bookingData.length} bookings to check");
 
         bookingData.forEach((key, value) {
+          // Skip cancelled bookings
+          if (cancelledBookingIds.contains(key)) {
+            print("DEBUG: Skipping previously cancelled booking $key");
+            return;
+          }
+
+          // Skip non-pending bookings
           if (value['status']?.toString().toLowerCase() != 'pending') {
             print("DEBUG: Skipping non-pending booking $key");
             return;
           }
 
+          // Check vehicle type compatibility
           String? requestedVehicleType = value['vehicleDetails']?['vehicleType']
               ?.toString()
               .trim()
@@ -176,7 +198,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
           bool shouldShowRequest = false;
 
-          // Explicit vehicle type matching logic
           switch (driverVehicle) {
             case 'car':
               shouldShowRequest = (requestedVehicleType == 'car');
@@ -218,7 +239,6 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       } catch (e) {
         print("DEBUG: Error processing bookings: $e");
-        print(e.toString());
       }
     }, onError: (error) {
       print("DEBUG: Booking listener error: $error");
@@ -297,26 +317,45 @@ class _HomeScreenState extends State<HomeScreen> {
         throw Exception('Booking ID is null');
       }
 
+      // Reference to the booking
+      final bookingRef =
+          FirebaseDatabase.instance.ref().child('bookings').child(bookingId!);
+
       // Create the cancellation details
       Map<String, dynamic> driverCancellationDetails = {
-        'driverId': driverId, // The ID of the driver who canceled
-        'reasonsList': reasons, // Reasons for cancellation
-        'otherReason':
-            otherReason.isNotEmpty ? otherReason : null, // Additional reason
-        'cancelledAt': ServerValue.timestamp, // Timestamp of cancellation
+        'driverId': driverId,
+        'reasonsList': reasons,
+        'otherReason': otherReason.isNotEmpty ? otherReason : null,
+        'cancelledAt': ServerValue.timestamp,
       };
 
-      // Update the Firebase database
+      // Update booking status and add cancellation details in a single transaction
+      await bookingRef.update({
+        'status': 'cancelled_by_driver',
+        'driverCancellation': driverCancellationDetails,
+      });
+
+      // Add this booking ID to the driver's cancelled bookings list
       await FirebaseDatabase.instance
           .ref()
-          .child('bookings')
+          .child('driverCancelledBookings')
+          .child(driverId)
           .child(bookingId!)
-          .child(
-              'driverCancellation') // Add data under "driverCancellation" field
-          .set(driverCancellationDetails);
+          .set({
+        'cancelledAt': ServerValue.timestamp,
+        'bookingId': bookingId,
+      });
+
+      // Clear local state
+      setState(() {
+        realPickuplocation = '';
+        realDropOfflocation = '';
+        vehicleType = '';
+        bookingId = null;
+      });
 
       if (mounted && context.mounted) {
-        // Pop any existing dialogs first
+        // Pop any existing dialogs
         Navigator.of(context).popUntil((route) => route.isFirst);
 
         // Show success dialog
@@ -333,7 +372,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(color: Colors.white),
                 ),
                 content: const Text(
-                  'You have successfully logged your cancellation.',
+                  'You have successfully cancelled this ride.',
                   style: TextStyle(color: Colors.white),
                 ),
                 actions: [
@@ -349,13 +388,14 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     } catch (e) {
-      // Handle error and show error message
       print('Error cancelling ride: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to log cancellation. Please try again.'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to cancel ride. Please try again.'),
+          ),
+        );
+      }
     }
   }
 

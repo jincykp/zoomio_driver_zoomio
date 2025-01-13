@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zoomio_driverzoomio/data/model/profile_model.dart';
 import 'package:zoomio_driverzoomio/data/services/profile_services.dart';
+import 'package:zoomio_driverzoomio/views/app_settings_screens/privacy_policy.dart';
 import 'package:zoomio_driverzoomio/views/auth_screens/signin_screen.dart';
 import 'package:zoomio_driverzoomio/views/bloc/themestate/thememode.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/cutom_profile_container.dart';
@@ -134,7 +135,13 @@ class ProfileScreen extends StatelessWidget {
                     CustomListTileCard(
                       leadingIcon: Icons.privacy_tip,
                       title: "Privacy Policy",
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const PrivacyPolicyScreen()));
+                      },
                     ),
                     const SizedBox(height: 10),
                     CustomListTileCard(
@@ -157,11 +164,8 @@ class ProfileScreen extends StatelessWidget {
                             context: context,
                             builder: (BuildContext context) {
                               return AlertDialog(
-                                title: Text(
-                                  "Logout Confirmation",
-                                  style: GoogleFonts.alikeAngular(
-                                      fontWeight: FontWeight.bold),
-                                ),
+                                title: const Text("Logout Confirmation",
+                                    style: TextStyle()),
                                 content: const Text(
                                   "Are you sure you want to logout?",
                                 ),
