@@ -6,6 +6,7 @@ import 'package:zoomio_driverzoomio/data/services/auth_services.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/home.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/completed_trip_screen.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/profile.dart';
+import 'package:zoomio_driverzoomio/views/homepage_screens/revenue_screen.dart';
 
 import 'package:zoomio_driverzoomio/views/styles/app_styles.dart';
 
@@ -27,6 +28,9 @@ class _BottomScreensState extends State<BottomScreens> {
   List<Widget> get _screens => [
         HomeScreen(),
         CompletedTripScreen(driverId: driverId),
+        RevenueScreen(
+          driverId: driverId,
+        ),
         ProfileScreen(userId: driverId),
       ];
 
@@ -65,6 +69,10 @@ class _BottomScreensState extends State<BottomScreens> {
               GButton(
                 icon: Icons.history,
                 text: "Completed Trips",
+              ),
+              GButton(
+                icon: Icons.payment,
+                text: "Revenue",
               ),
               GButton(
                 icon: Icons.person,

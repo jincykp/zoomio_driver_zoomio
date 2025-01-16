@@ -154,7 +154,7 @@ class TripCard extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                '\$${trip.totalPrice.toStringAsFixed(2)}',
+                '₹ ${trip.totalPrice.toStringAsFixed(2)}',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,

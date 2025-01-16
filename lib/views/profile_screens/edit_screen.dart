@@ -19,10 +19,10 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  late TextEditingController nameController;
-  late TextEditingController ageController;
-  late TextEditingController contactController;
-  late TextEditingController experienceController;
+  late TextEditingController nameController = TextEditingController();
+  late TextEditingController ageController = TextEditingController();
+  late TextEditingController contactController = TextEditingController();
+  late TextEditingController experienceController = TextEditingController();
 
   String? selectedGender;
   String? selectedVehiclePreference;
@@ -38,31 +38,39 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _fetchProfileData();
   }
 
+  bool _isLoading = true;
   Future<void> _fetchProfileData() async {
     try {
       ProfileModel fetchedProfile = await profileServices.getProfileData();
 
-      // Update the profile data and the controllers after fetching the data
-      setState(() {
-        profile = fetchedProfile;
+      if (mounted) {
+        // Check if widget is still mounted
+        setState(() {
+          _isLoading = false; // Set loading to false when data is fetched
+          profile = fetchedProfile;
 
-        nameController = TextEditingController(text: profile?.name ?? '');
-        ageController =
-            TextEditingController(text: profile?.age.toString() ?? '');
-        contactController =
-            TextEditingController(text: profile?.contactNumber ?? '');
-        experienceController = TextEditingController(
-            text: profile?.experienceYears.toString() ?? '');
+          nameController = TextEditingController(text: profile?.name ?? '');
+          ageController =
+              TextEditingController(text: profile?.age.toString() ?? '');
+          contactController =
+              TextEditingController(text: profile?.contactNumber ?? '');
+          experienceController = TextEditingController(
+              text: profile?.experienceYears.toString() ?? '');
 
-        selectedGender = profile?.gender;
-        selectedVehiclePreference = profile?.vehiclePreference;
-        profileImg = profile?.profileImageUrl;
-        licenseImg = profile?.licenseImageUrl;
-      });
+          selectedGender = profile?.gender;
+          selectedVehiclePreference = profile?.vehiclePreference;
+          profileImg = profile?.profileImageUrl;
+          licenseImg = profile?.licenseImageUrl;
+        });
+      }
     } catch (e) {
-      // Handle error
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error fetching profile: $e')));
+      if (mounted) {
+        setState(() {
+          _isLoading = false; // Set loading to false even if there's an error
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error fetching profile: $e')));
+      }
     }
   }
 
@@ -90,176 +98,182 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         backgroundColor: ThemeColors.primaryColor,
       ),
-      body: SingleChildScrollView(
-        child: Form(
-          key: formKey,
-          child: Column(
-            children: [
-              Container(
-                width: double.infinity,
-                height: 200,
-                decoration: const BoxDecoration(
-                  color: ThemeColors.primaryColor,
-                  borderRadius: BorderRadius.only(
-                    bottomRight: Radius.circular(50),
-                    bottomLeft: Radius.circular(50),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
                   children: [
-                    Stack(
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: ThemeColors.textColor,
-                          maxRadius: 70,
-                          backgroundImage: profileImg != null
-                              ? NetworkImage(profileImg!)
-                              : null,
-                          child: profileImg == null
-                              ? const Icon(
-                                  Icons.person,
-                                  size: 50,
-                                  color: ThemeColors.titleColor,
-                                )
-                              : null,
+                    Container(
+                      width: double.infinity,
+                      height: 200,
+                      decoration: const BoxDecoration(
+                        color: ThemeColors.primaryColor,
+                        borderRadius: BorderRadius.only(
+                          bottomRight: Radius.circular(50),
+                          bottomLeft: Radius.circular(50),
                         ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: GestureDetector(
-                            onTap: () => selectProfileImage(),
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.black.withOpacity(0.5),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Stack(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: ThemeColors.textColor,
+                                maxRadius: 70,
+                                backgroundImage: profileImg != null
+                                    ? NetworkImage(profileImg!)
+                                    : null,
+                                child: profileImg == null
+                                    ? const Icon(
+                                        Icons.person,
+                                        size: 50,
+                                        color: ThemeColors.titleColor,
+                                      )
+                                    : null,
                               ),
-                              child: const Icon(
-                                Icons.edit,
-                                size: 25,
-                                color: Colors.white,
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: GestureDetector(
+                                  onTap: () => selectProfileImage(),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.black.withOpacity(0.5),
+                                    ),
+                                    child: const Icon(
+                                      Icons.edit,
+                                      size: 25,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    SizedBox(
+                      width: screenWidth * 0.88,
+                      child: Profilefields(
+                        controller: nameController,
+                        hintText: "Name",
+                        validator: (value) => validateName(value),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: screenWidth * 0.88,
+                      child: Profilefields(
+                        controller: ageController,
+                        hintText: "Age",
+                        keyBoardType: TextInputType.number,
+                        validator: (value) => validateAge(value),
+                        inputFormatters: [LengthLimitingTextInputFormatter(2)],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: screenWidth * 0.88,
+                      child: Profilefields(
+                        controller: contactController,
+                        hintText: "Contact Number",
+                        keyBoardType: TextInputType.number,
+                        validator: (value) => validateContact(value),
+                        inputFormatters: [LengthLimitingTextInputFormatter(10)],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownField(
+                      value: selectedGender,
+                      hint: "Select Gender",
+                      items: ["Male", "Female", "Other"],
+                      onChanged: (newValue) {
+                        setState(() {
+                          selectedGender = newValue;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownField(
+                      value: selectedVehiclePreference,
+                      hint: "Select Vehicle Preference",
+                      items: ["Bike", "Car", "Both"],
+                      onChanged: (newValue) {
+                        setState(() {
+                          selectedVehiclePreference = newValue;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: screenWidth * 0.88,
+                      child: Profilefields(
+                        controller: experienceController,
+                        hintText: "Experience (Years)",
+                        keyBoardType: TextInputType.number,
+                        validator: (value) => validateExperience(value),
+                        inputFormatters: [LengthLimitingTextInputFormatter(2)],
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    SizedBox(
+                      width: screenWidth * 0.9,
+                      child: CustomButtons(
+                        text: "Save Changes",
+                        onPressed: () async {
+                          if (formKey.currentState!.validate()) {
+                            final updatedProfile = ProfileModel(
+                              name: nameController.text,
+                              age: int.tryParse(ageController.text) ?? 0,
+                              contactNumber: contactController.text,
+                              gender: selectedGender,
+                              vehiclePreference: selectedVehiclePreference,
+                              experienceYears:
+                                  int.tryParse(experienceController.text) ?? 0,
+                              profileImageUrl: profileImg,
+                              licenseImageUrl: licenseImg,
+                            );
+
+                            try {
+                              await profileServices
+                                  .updateProfile(updatedProfile);
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(SnackBar(
+                                backgroundColor: ThemeColors.successColor,
+                                content:
+                                    const Text("Profile updated successfully!"),
+                              ));
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => BottomScreens(),
+                                ),
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(SnackBar(
+                                content: Text("Error updating profile: $e"),
+                              ));
+                            }
+                          }
+                        },
+                        backgroundColor: ThemeColors.primaryColor,
+                        textColor: ThemeColors.textColor,
+                        screenWidth: screenWidth,
+                        screenHeight: screenHeight,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 15),
-              SizedBox(
-                width: screenWidth * 0.88,
-                child: Profilefields(
-                  controller: nameController,
-                  hintText: "Name",
-                  validator: (value) => validateName(value),
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: screenWidth * 0.88,
-                child: Profilefields(
-                  controller: ageController,
-                  hintText: "Age",
-                  keyBoardType: TextInputType.number,
-                  validator: (value) => validateAge(value),
-                  inputFormatters: [LengthLimitingTextInputFormatter(2)],
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: screenWidth * 0.88,
-                child: Profilefields(
-                  controller: contactController,
-                  hintText: "Contact Number",
-                  keyBoardType: TextInputType.number,
-                  validator: (value) => validateContact(value),
-                  inputFormatters: [LengthLimitingTextInputFormatter(10)],
-                ),
-              ),
-              const SizedBox(height: 10),
-              DropdownField(
-                value: selectedGender,
-                hint: "Select Gender",
-                items: ["Male", "Female", "Other"],
-                onChanged: (newValue) {
-                  setState(() {
-                    selectedGender = newValue;
-                  });
-                },
-              ),
-              const SizedBox(height: 10),
-              DropdownField(
-                value: selectedVehiclePreference,
-                hint: "Select Vehicle Preference",
-                items: ["Bike", "Car", "Both"],
-                onChanged: (newValue) {
-                  setState(() {
-                    selectedVehiclePreference = newValue;
-                  });
-                },
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: screenWidth * 0.88,
-                child: Profilefields(
-                  controller: experienceController,
-                  hintText: "Experience (Years)",
-                  keyBoardType: TextInputType.number,
-                  validator: (value) => validateExperience(value),
-                  inputFormatters: [LengthLimitingTextInputFormatter(2)],
-                ),
-              ),
-              const SizedBox(height: 15),
-              SizedBox(
-                width: screenWidth * 0.9,
-                child: CustomButtons(
-                  text: "UPDATE",
-                  onPressed: () async {
-                    if (formKey.currentState!.validate()) {
-                      final updatedProfile = ProfileModel(
-                        name: nameController.text,
-                        age: int.tryParse(ageController.text) ?? 0,
-                        contactNumber: contactController.text,
-                        gender: selectedGender,
-                        vehiclePreference: selectedVehiclePreference,
-                        experienceYears:
-                            int.tryParse(experienceController.text) ?? 0,
-                        profileImageUrl: profileImg,
-                        licenseImageUrl: licenseImg,
-                      );
-
-                      try {
-                        await profileServices.updateProfile(updatedProfile);
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          backgroundColor: ThemeColors.successColor,
-                          content: const Text("Profile updated successfully!"),
-                        ));
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => BottomScreens(),
-                          ),
-                        );
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text("Error updating profile: $e"),
-                        ));
-                      }
-                    }
-                  },
-                  backgroundColor: ThemeColors.primaryColor,
-                  textColor: ThemeColors.textColor,
-                  screenWidth: screenWidth,
-                  screenHeight: screenHeight,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 

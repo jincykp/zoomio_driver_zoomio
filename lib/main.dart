@@ -1,5 +1,6 @@
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +12,7 @@ import 'package:zoomio_driverzoomio/views/bloc/themestate/thememode.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/bloc/completed_trip_bloc.dart';
 
 import 'package:zoomio_driverzoomio/views/profile_screens/bloc/driver_profile_bloc.dart';
+import 'package:zoomio_driverzoomio/views/revenue_screens/bloc/revenue_bloc.dart';
 import 'package:zoomio_driverzoomio/views/splash_screen.dart';
 
 import 'views/homepage_screens/bloc/driver_status_bloc.dart';
@@ -53,6 +55,11 @@ class MyApp extends StatelessWidget {
         BlocProvider(
           create: (context) =>
               CompletedTripsBloc(), // Use the provided ProfileRepository
+        ),
+        BlocProvider(
+          create: (context) => RevenueBloc(
+            FirebaseDatabase.instance.ref('bookings'),
+          ), // Use the provided ProfileRepository
         )
       ],
       child: BlocBuilder<ThemeCubit, ThemeModeState>(

@@ -13,7 +13,6 @@ import 'package:zoomio_driverzoomio/data/services/driver_accepted_services.dart'
 import 'package:zoomio_driverzoomio/data/services/profile_services.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_bottomsheet.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_button.dart';
-import 'package:zoomio_driverzoomio/views/push_notifications/notification_services.dart';
 import 'package:zoomio_driverzoomio/views/styles/app_styles.dart';
 import 'package:http/http.dart' as http;
 import 'bloc/driver_status_bloc.dart';
@@ -40,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final LatLng defaultPoint =
       const LatLng(8.5241, 76.9366); // Default map center
   LatLng? currentLocation; // To store the user's current location
-  NotificationServices notificationServices = NotificationServices();
+  // NotificationServices notificationServices = NotificationServices();
   final MapController mapController = MapController(); // Map controller
   // Function to fetch the current location
   Future<void> fetchCurrentLocation() async {

@@ -41,7 +41,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           if (state is SignUpSuccess) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => ProfileScreenTwo()),
+              MaterialPageRoute(builder: (context) => const ProfileScreenTwo()),
             );
           } else if (state is SignUpFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
