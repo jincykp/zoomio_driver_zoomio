@@ -11,12 +11,17 @@ class DriverProfileSaved extends DriverProfileState {}
 
 class DriverProfileLoaded extends DriverProfileState {
   final ProfileModel profile;
+  final double averageRating;
+  final int totalRatings;
 
-  DriverProfileLoaded(this.profile);
+  DriverProfileLoaded(
+    this.profile, {
+    this.averageRating = 0.0,
+    this.totalRatings = 0,
+  });
 }
 
 class DriverProfileError extends DriverProfileState {
   final String message;
-
   DriverProfileError(this.message);
 }

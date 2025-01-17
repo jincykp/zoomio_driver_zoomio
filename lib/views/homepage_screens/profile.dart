@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:zoomio_driverzoomio/data/model/profile_model.dart';
 import 'package:zoomio_driverzoomio/data/services/profile_services.dart';
 import 'package:zoomio_driverzoomio/views/app_settings_screens/privacy_policy.dart';
@@ -46,7 +47,6 @@ class ProfileScreen extends StatelessWidget {
           } else if (state is DriverProfileError) {
             return Center(child: Text(state.message));
           } else if (state is DriverProfileLoaded) {
-            // Displaying profile data
             final profile = state.profile;
             return Padding(
               padding: EdgeInsets.all(screenWidth * 0.03),
@@ -132,6 +132,32 @@ class ProfileScreen extends StatelessWidget {
                           GoogleFonts.alikeAngular(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 10),
+                    Column(
+                      children: [
+                        RatingBar.builder(
+                          initialRating: state.averageRating,
+                          minRating: 0,
+                          direction: Axis.horizontal,
+                          allowHalfRating: true,
+                          itemCount: 5,
+                          itemSize: 24,
+                          ignoreGestures: true,
+                          itemBuilder: (context, _) => const Icon(
+                            Icons.star,
+                            color: Colors.amber,
+                          ),
+                          onRatingUpdate: (_) {},
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${state.averageRating} (${state.totalRatings} reviews)',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Theme.of(context).textTheme.bodySmall?.color,
+                          ),
+                        ),
+                      ],
+                    ),
                     CustomListTileCard(
                       leadingIcon: Icons.privacy_tip,
                       title: "Privacy Policy",

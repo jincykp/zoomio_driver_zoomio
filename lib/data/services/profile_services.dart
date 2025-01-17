@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:zoomio_driverzoomio/data/model/profile_model.dart';
 
 class ProfileRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
   // Get current user ID
   Future<String?> getCurrentUserId() async {
@@ -148,4 +150,76 @@ class ProfileRepository {
       rethrow;
     }
   }
+
+  Future<RatingData> getDriverRatings(String driverId) async {
+    try {
+      print('Fetching ratings for driver: $driverId');
+
+      // Query bookings with feedback for this driver
+      final DataSnapshot snapshot = await _database
+          .child('bookings')
+          .orderByChild('driverId')
+          .equalTo(driverId)
+          .get();
+
+      if (!snapshot.exists) {
+        print('No bookings found for driver');
+        return RatingData(average: 0.0, total: 0);
+      }
+
+      // Convert snapshot to Map
+      final Map<dynamic, dynamic>? bookings =
+          snapshot.value as Map<dynamic, dynamic>?;
+
+      if (bookings == null) {
+        return RatingData(average: 0.0, total: 0);
+      }
+
+      double totalRating = 0;
+      int ratingCount = 0;
+
+      // Iterate through bookings to find ratings
+      bookings.forEach((key, booking) {
+        // Check if booking has feedback and rating
+        if (booking is Map &&
+            booking['feedback'] != null &&
+            booking['complaint'] == true &&
+            booking['rating'] != null) {
+          totalRating += (booking['rating'] as num).toDouble();
+          ratingCount++;
+        }
+      });
+
+      // Calculate average
+      double averageRating = ratingCount > 0 ? totalRating / ratingCount : 0.0;
+
+      print(
+          'Calculated ratings - Average: $averageRating, Total: $ratingCount');
+
+      return RatingData(
+        average: double.parse(
+            averageRating.toStringAsFixed(1)), // Round to 1 decimal
+        total: ratingCount,
+      );
+    } catch (e) {
+      print('Error calculating ratings: $e');
+      throw Exception('Failed to fetch driver ratings: $e');
+    }
+  }
+
+  // Helper method to validate rating value
+  bool _isValidRating(dynamic rating) {
+    if (rating is num) {
+      double ratingValue = rating.toDouble();
+      return ratingValue >= 0 && ratingValue <= 5;
+    }
+    return false;
+  }
+}
+
+class RatingData {
+  final double average;
+  final int total;
+
+  RatingData({required this.average, required this.total});
 }
