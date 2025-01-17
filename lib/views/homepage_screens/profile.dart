@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:zoomio_driverzoomio/data/model/profile_model.dart';
 import 'package:zoomio_driverzoomio/data/services/profile_services.dart';
+import 'package:zoomio_driverzoomio/views/app_settings_screens/help_and_support_screen.dart';
 import 'package:zoomio_driverzoomio/views/app_settings_screens/privacy_policy.dart';
 import 'package:zoomio_driverzoomio/views/auth_screens/signin_screen.dart';
 import 'package:zoomio_driverzoomio/views/bloc/themestate/thememode.dart';
@@ -12,6 +13,7 @@ import 'package:zoomio_driverzoomio/views/profile_screens/bloc/driver_profile_ev
 import 'package:zoomio_driverzoomio/views/profile_screens/bloc/driver_profile_state.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:zoomio_driverzoomio/views/profile_screens/edit_screen.dart';
+import 'package:zoomio_driverzoomio/views/app_settings_screens/feedback_and_complaint_screen.dart';
 import 'package:zoomio_driverzoomio/views/styles/app_styles.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -159,7 +161,7 @@ class ProfileScreen extends StatelessWidget {
                       ],
                     ),
                     CustomListTileCard(
-                      leadingIcon: Icons.privacy_tip,
+                      leadingIcon: Icons.privacy_tip_outlined,
                       title: "Privacy Policy",
                       onTap: () {
                         Navigator.push(
@@ -171,15 +173,34 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     CustomListTileCard(
-                      leadingIcon: Icons.settings,
-                      title: "Settings",
-                      onTap: () {},
+                      leadingIcon: Icons.help_outline_outlined,
+                      title: "Help and Support",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => HelpSupportScreen(),
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 10),
                     CustomListTileCard(
                       leadingIcon: Icons.sync_problem,
                       title: "Legal & Compliance",
-                      onTap: () {},
+                      onTap: () async {
+                        String? driverId =
+                            await ProfileRepository().getCurrentUserId();
+                        if (driverId != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FeedbackAndComplaintsScreen(
+                                  driverId: driverId),
+                            ),
+                          );
+                        }
+                      },
                     ),
                     const SizedBox(height: 10),
                     CustomListTileCard(

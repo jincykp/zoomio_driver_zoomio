@@ -811,7 +811,11 @@ class _HomeScreenState extends State<HomeScreen> {
           onPressed: () {
             fetchCurrentLocation(); // Reset map center and zoom
           },
-          child: const Icon(Icons.my_location),
+          child: const Icon(
+            Icons.my_location,
+            color: ThemeColors.titleColor,
+          ),
+          backgroundColor: ThemeColors.textColor,
         ),
       );
     });
