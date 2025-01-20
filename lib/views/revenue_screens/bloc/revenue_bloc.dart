@@ -16,6 +16,11 @@ class RevenueBloc extends Bloc<RevenueEvent, RevenueState> {
     on<FetchRevenueData>(_onFetchRevenueData);
   }
 
+  DateTime _getDateTimeFromTimestamp(dynamic timestamp) {
+    if (timestamp is DateTime) return timestamp;
+    return timestamp as DateTime;
+  }
+
   Future<void> _onFetchRevenueData(
     FetchRevenueData event,
     Emitter<RevenueState> emit,
@@ -25,17 +30,13 @@ class RevenueBloc extends Bloc<RevenueEvent, RevenueState> {
 
     try {
       await _revenueSubscription?.cancel();
-      final controller = StreamController<RevenueState>();
+      final controller = StreamController<RevenueState>.broadcast();
 
       final now = DateTime.now();
       final startOfDay = DateTime(now.year, now.month, now.day);
       final endOfDay = startOfDay.add(const Duration(days: 1));
-
-      // Calculate start of week (assuming week starts on Monday)
       final startOfWeek =
           startOfDay.subtract(Duration(days: startOfDay.weekday - 1));
-
-      // Calculate start of month
       final startOfMonth = DateTime(now.year, now.month, 1);
 
       _revenueSubscription = _bookingsRef
@@ -46,7 +47,8 @@ class RevenueBloc extends Bloc<RevenueEvent, RevenueState> {
         (DatabaseEvent event) {
           if (event.snapshot.value != null) {
             try {
-              final Map tripsMap = event.snapshot.value as Map;
+              final Map<dynamic, dynamic> tripsMap =
+                  event.snapshot.value as Map;
 
               final List<Trip> allTrips = tripsMap.entries
                   .map((e) {
@@ -58,29 +60,30 @@ class RevenueBloc extends Bloc<RevenueEvent, RevenueState> {
                     }
                   })
                   .whereType<Trip>()
-                  .where((trip) => trip.status == 'trip completed')
+                  .where((trip) =>
+                      trip.status == 'trip_completed') // Updated status check
                   .toList();
 
               // Filter trips for different time periods
               final List<Trip> todayTrips = allTrips.where((trip) {
-                final timestamp = trip.timestamp as DateTime;
-                return timestamp.isAfter(startOfDay) &&
-                    timestamp.isBefore(endOfDay);
+                final tripDate = _getDateTimeFromTimestamp(trip.timestamp);
+                return tripDate.isAfter(startOfDay) &&
+                    tripDate.isBefore(endOfDay);
               }).toList();
 
               final List<Trip> weeklyTrips = allTrips.where((trip) {
-                final timestamp = trip.timestamp as DateTime;
-                return timestamp.isAfter(startOfWeek) &&
-                    timestamp.isBefore(endOfDay);
+                final tripDate = _getDateTimeFromTimestamp(trip.timestamp);
+                return tripDate.isAfter(startOfWeek) &&
+                    tripDate.isBefore(endOfDay);
               }).toList();
 
               final List<Trip> monthlyTrips = allTrips.where((trip) {
-                final timestamp = trip.timestamp as DateTime;
-                return timestamp.isAfter(startOfMonth) &&
-                    timestamp.isBefore(endOfDay);
+                final tripDate = _getDateTimeFromTimestamp(trip.timestamp);
+                return tripDate.isAfter(startOfMonth) &&
+                    tripDate.isBefore(endOfDay);
               }).toList();
 
-              // Calculate earnings for each period
+              // Calculate earnings
               final double todayEarnings =
                   todayTrips.fold(0, (sum, trip) => sum + trip.totalPrice);
               final double weeklyEarnings =
@@ -128,9 +131,8 @@ class RevenueBloc extends Bloc<RevenueEvent, RevenueState> {
         controller.stream,
         onData: (RevenueState state) => state,
       );
-
-      await controller.close();
     } catch (e) {
+      print('Error in revenue bloc: $e');
       emit(RevenueError('Failed to fetch revenue data: $e'));
     }
   }

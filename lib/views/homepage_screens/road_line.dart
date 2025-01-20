@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'package:zoomio_driverzoomio/data/services/driver_accepted_services.dart';
 import 'package:zoomio_driverzoomio/views/bottom_screens.dart';
 import 'package:zoomio_driverzoomio/views/chat_screens/chat_screen.dart';
 import 'dart:convert';
@@ -94,6 +95,8 @@ class _RoadLinesScreenState extends State<RoadLinesScreen> {
   }
 
   Future<void> handleTripCompletion() async {
+    final DriverBookingService bookingService = DriverBookingService();
+
     try {
       // Show loading indicator
       showDialog(
@@ -106,8 +109,8 @@ class _RoadLinesScreenState extends State<RoadLinesScreen> {
         },
       );
 
-      // Update booking status to completed
-      await updateBookingStatus(widget.bookingId, 'trip completed');
+      // Complete trip (this will update both booking and vehicle status)
+      await bookingService.completeTrip(widget.bookingId);
 
       // Remove loading indicator
       Navigator.pop(context);

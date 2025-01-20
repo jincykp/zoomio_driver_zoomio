@@ -72,7 +72,7 @@ class _BottomScreensState extends State<BottomScreens> {
               ),
               GButton(
                 icon: Icons.payment,
-                text: "Revenue",
+                text: "Earnings Overview",
               ),
               GButton(
                 icon: Icons.person,

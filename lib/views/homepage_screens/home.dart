@@ -316,9 +316,10 @@ class _HomeScreenState extends State<HomeScreen> {
         throw Exception('Booking ID is null');
       }
 
-      // Reference to the booking
       final bookingRef =
           FirebaseDatabase.instance.ref().child('bookings').child(bookingId!);
+      final driverStatsRef =
+          FirebaseDatabase.instance.ref().child('driverStats').child(driverId);
 
       // Create the cancellation details
       Map<String, dynamic> driverCancellationDetails = {
@@ -328,13 +329,18 @@ class _HomeScreenState extends State<HomeScreen> {
         'cancelledAt': ServerValue.timestamp,
       };
 
-      // Update booking status and add cancellation details in a single transaction
+      // Get current date for tracking
+      final now = DateTime.now();
+      final today =
+          DateTime(now.year, now.month, now.day).millisecondsSinceEpoch;
+
+      // Update booking status first
       await bookingRef.update({
         'status': 'cancelled_by_driver',
         'driverCancellation': driverCancellationDetails,
       });
 
-      // Add this booking ID to the driver's cancelled bookings list
+      // Add to driver's cancelled bookings list
       await FirebaseDatabase.instance
           .ref()
           .child('driverCancelledBookings')
@@ -344,6 +350,46 @@ class _HomeScreenState extends State<HomeScreen> {
         'cancelledAt': ServerValue.timestamp,
         'bookingId': bookingId,
       });
+
+      // Instead of using transaction, use get() and set() with proper error handling
+      try {
+        DataSnapshot snapshot = await driverStatsRef.get();
+        Map<String, dynamic> stats;
+
+        if (snapshot.exists && snapshot.value != null) {
+          stats = Map<String, dynamic>.from(snapshot.value as Map);
+
+          // Check if we need to reset daily stats
+          int lastReset = stats['lastStatsReset'] ?? 0;
+          if (lastReset < today) {
+            // Reset daily stats if it's a new day
+            stats['dailyCancellations'] = 1;
+            stats['lastStatsReset'] = today;
+          } else {
+            // Increment daily cancellations
+            stats['dailyCancellations'] =
+                (stats['dailyCancellations'] ?? 0) + 1;
+          }
+
+          // Increment total cancellations
+          stats['totalCancellations'] = (stats['totalCancellations'] ?? 0) + 1;
+        } else {
+          // Initialize stats if they don't exist
+          stats = {
+            'totalCancellations': 1,
+            'dailyCancellations': 1,
+            'lastStatsReset': today,
+          };
+        }
+
+        stats['lastCancellation'] = ServerValue.timestamp;
+
+        // Update the stats
+        await driverStatsRef.set(stats);
+      } catch (e) {
+        print('Error updating driver stats: $e');
+        // Continue with the rest of the function as stats update is not critical
+      }
 
       // Clear local state
       setState(() {
@@ -395,6 +441,46 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       }
+    }
+  }
+
+// Helper functions remain the same
+  Future<Map<String, dynamic>> getDriverCancellationStats(
+      String driverId) async {
+    try {
+      final statsRef =
+          FirebaseDatabase.instance.ref().child('driverStats').child(driverId);
+      DataSnapshot snapshot = await statsRef.get();
+
+      if (snapshot.exists) {
+        return snapshot.value as Map<String, dynamic>;
+      } else {
+        return {
+          'totalCancellations': 0,
+          'dailyCancellations': 0,
+          'lastStatsReset': DateTime.now().millisecondsSinceEpoch,
+        };
+      }
+    } catch (e) {
+      print('Error getting cancellation stats: $e');
+      throw e;
+    }
+  }
+
+  Future<Map<String, Map<String, dynamic>>>
+      getAllDriversCancellationStats() async {
+    try {
+      final statsRef = FirebaseDatabase.instance.ref().child('driverStats');
+      DataSnapshot snapshot = await statsRef.get();
+
+      if (snapshot.exists) {
+        return Map<String, Map<String, dynamic>>.from(snapshot.value as Map);
+      } else {
+        return {};
+      }
+    } catch (e) {
+      print('Error getting all drivers stats: $e');
+      throw e;
     }
   }
 

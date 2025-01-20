@@ -21,12 +21,11 @@ class CompletedTripsBloc extends Bloc<CompletedTripEvent, CompletedTripState> {
     FetchCompletedTrips event,
     Emitter<CompletedTripState> emit,
   ) async {
+    print('Fetching completed trips for driver: ${event.driverId}');
     emit(CompletedTripsLoading());
 
     try {
       await _tripsSubscription?.cancel();
-
-      // Create a StreamController to handle the Firebase stream
       final controller = StreamController<CompletedTripState>();
 
       _tripsSubscription = _bookingsRef
@@ -36,23 +35,38 @@ class CompletedTripsBloc extends Bloc<CompletedTripEvent, CompletedTripState> {
           .listen(
         (DatabaseEvent event) {
           if (event.snapshot.value != null) {
-            final Map<dynamic, dynamic> tripsMap =
-                event.snapshot.value as Map<dynamic, dynamic>;
+            try {
+              print('Received Firebase data');
+              final Map<dynamic, dynamic> tripsMap =
+                  event.snapshot.value as Map<dynamic, dynamic>;
 
-            final List<Trip> trips = tripsMap.entries
-                .where((e) => (e.value as Map)['status'] == 'trip completed')
-                .map((e) => Trip.fromMap(e.key, e.value as Map))
-                .toList();
+              final List<Trip> trips = tripsMap.entries.where((e) {
+                final status = (e.value as Map)['status'];
+                print('Trip status: $status');
+                return status ==
+                    'trip_completed'; // Changed to match Firebase data
+              }).map((e) {
+                print('Processing trip: ${e.key}');
+                return Trip.fromMap(e.key, e.value as Map);
+              }).toList();
 
-            // Sort by timestamp descending
-            trips.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+              print('Found ${trips.length} completed trips');
 
-            controller.add(CompletedTripsLoaded(trips));
+              // Sort by timestamp descending
+              trips.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+              controller.add(CompletedTripsLoaded(trips));
+            } catch (e) {
+              print('Error processing trips: $e');
+              controller.add(CompletedTripsError('Error processing trips: $e'));
+            }
           } else {
+            print('No trips data found');
             controller.add(CompletedTripsLoaded([]));
           }
         },
         onError: (error) {
+          print('Firebase error: $error');
           controller.add(CompletedTripsError('Failed to fetch trips: $error'));
         },
       );
@@ -64,6 +78,7 @@ class CompletedTripsBloc extends Bloc<CompletedTripEvent, CompletedTripState> {
       // Clean up
       await controller.close();
     } catch (e) {
+      print('Error in completed trips bloc: $e');
       emit(CompletedTripsError('Failed to fetch trips: $e'));
     }
   }
