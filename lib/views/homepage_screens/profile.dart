@@ -4,6 +4,7 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:zoomio_driverzoomio/data/model/profile_model.dart';
 import 'package:zoomio_driverzoomio/data/services/profile_services.dart';
 import 'package:zoomio_driverzoomio/views/app_settings_screens/help_and_support_screen.dart';
+import 'package:zoomio_driverzoomio/views/app_settings_screens/notification_screen.dart';
 import 'package:zoomio_driverzoomio/views/app_settings_screens/privacy_policy.dart';
 import 'package:zoomio_driverzoomio/views/auth_screens/signin_screen.dart';
 import 'package:zoomio_driverzoomio/views/bloc/themestate/thememode.dart';
@@ -160,6 +161,21 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+                    CustomListTileCard(
+                      leadingIcon: Icons.warning_amber_outlined,
+                      title: "Notifications",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => NotificationScreen(
+                              driverId: userId,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
                     CustomListTileCard(
                       leadingIcon: Icons.privacy_tip_outlined,
                       title: "Privacy Policy",

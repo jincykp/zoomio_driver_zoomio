@@ -133,6 +133,18 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    // Check if driver is blocked
+    if (driverProfile?.isBlocked == true) {
+      print("DEBUG: Driver is blocked - cannot receive ride requests");
+      setState(() {
+        realPickuplocation = '';
+        realDropOfflocation = '';
+        vehicleType = '';
+        bookingId = null;
+      });
+      return;
+    }
+
     _cancelPreviousRideRequestListener();
 
     DatabaseReference bookingsRef =
@@ -150,6 +162,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (!event.snapshot.exists) {
         print("DEBUG: No bookings found");
+        return;
+      }
+
+      // Re-check blocking status on each update
+      DocumentSnapshot driverSnapshot = await FirebaseFirestore.instance
+          .collection('driverProfile')
+          .doc(driverId)
+          .get();
+
+      if (driverSnapshot.exists &&
+          (driverSnapshot.data() as Map<String, dynamic>)['isBlocked'] ==
+              true) {
+        print("DEBUG: Driver is now blocked - stopping ride requests");
+        setState(() {
+          realPickuplocation = '';
+          realDropOfflocation = '';
+          vehicleType = '';
+          bookingId = null;
+        });
         return;
       }
 
@@ -223,14 +254,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   double.tryParse(value['totalPrice']?.toString() ?? '0.0') ??
                       0.0;
               vehicleType = requestedVehicleType;
-
-              // Print booking details
-              print("DEBUG: Booking Details:");
-              print("  Booking ID: $bookingId");
-              print("  Pickup Location: $realPickuplocation");
-              print("  Drop-off Location: $realDropOfflocation");
-              print("  Total Price: $totalPrice");
-              print("  Vehicle Type: $vehicleType");
             });
           } else {
             print("DEBUG: Skipping non-matching vehicle type for booking $key");
@@ -351,7 +374,7 @@ class _HomeScreenState extends State<HomeScreen> {
         'bookingId': bookingId,
       });
 
-      // Instead of using transaction, use get() and set() with proper error handling
+      // Update driver stats
       try {
         DataSnapshot snapshot = await driverStatsRef.get();
         Map<String, dynamic> stats;
@@ -436,7 +459,7 @@ class _HomeScreenState extends State<HomeScreen> {
       print('Error cancelling ride: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Failed to cancel ride. Please try again.'),
           ),
         );
