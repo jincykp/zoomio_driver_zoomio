@@ -7,16 +7,19 @@ import 'package:zoomio_driverzoomio/views/custom_widgets/custom_messaging_textfi
 import 'package:zoomio_driverzoomio/views/styles/app_styles.dart';
 
 class DriverChatScreen extends StatefulWidget {
-  final String userId; // ID of the user (passenger)
-  final String userEmail; // Email of the user (passenger)
-  final String bookingId; // Booking ID associated with this chat
+  final String userId;
+  final String userEmail;
+  final String bookingId;
   final String userName;
+  final String? userProfilePhoto;
+
   const DriverChatScreen({
     Key? key,
     required this.userId,
     required this.userEmail,
     required this.bookingId,
     required this.userName,
+    this.userProfilePhoto,
   }) : super(key: key);
 
   @override
@@ -37,8 +40,6 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
           _messageController.text.trim(),
         );
         _messageController.clear();
-
-        // Auto-scroll to the bottom after sending a message
         _scrollToBottom();
       } catch (e) {
         if (mounted) {
@@ -48,6 +49,14 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
         }
       }
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToBottom();
+    });
   }
 
   void _scrollToBottom() {
@@ -64,14 +73,11 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: _buildProfileAvatar(),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(widget.userName),
-            // Text(
-            //   'Booking ID: ${widget.bookingId}',
-            //   style: const TextStyle(fontSize: 12),
-            // ),
           ],
         ),
         backgroundColor: ThemeColors.primaryColor,
@@ -88,6 +94,22 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
     );
   }
 
+  Widget _buildProfileAvatar() {
+    if (widget.userProfilePhoto == null || widget.userProfilePhoto!.isEmpty) {
+      return const Icon(Icons.person);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: CircleAvatar(
+        backgroundImage: NetworkImage(widget.userProfilePhoto!),
+        backgroundColor: Colors.grey.shade300,
+        child:
+            widget.userProfilePhoto == null ? const Icon(Icons.person) : null,
+      ),
+    );
+  }
+
   Widget _buildMessageList() {
     return StreamBuilder<QuerySnapshot>(
       stream: _chatServices.getMessages(
@@ -96,25 +118,25 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
       ),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Center(
-            child: Text('Error: ${snapshot.error}'),
-          );
+          return Center(child: Text('Error: ${snapshot.error}'));
         }
 
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
-        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+        // Use WidgetsBinding to ensure scroll happens after the frame is rendered
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToBottom();
+        });
 
-        return ListView(
+        return ListView.builder(
           controller: _scrollController,
           padding: const EdgeInsets.all(8),
-          children: snapshot.data!.docs
-              .map((document) => _buildMessageItem(document))
-              .toList(),
+          itemCount: snapshot.data!.docs.length,
+          itemBuilder: (context, index) {
+            return _buildMessageItem(snapshot.data!.docs[index]);
+          },
         );
       },
     );
@@ -124,46 +146,15 @@ class _DriverChatScreenState extends State<DriverChatScreen> {
     Map<String, dynamic> data = document.data() as Map<String, dynamic>;
     bool isCurrentUser = data['senderId'] == _firebaseAuth.currentUser!.uid;
 
-    return Align(
-      alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        padding: const EdgeInsets.all(12),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.7,
-        ),
-        child: Column(
-          crossAxisAlignment:
-              isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: [
-            Text(
-              data['senderEmail'],
-              style: const TextStyle(
-                fontSize: 12,
-              ),
-            ),
-            const SizedBox(height: 4),
-            ChatBubble(
-              message: data['message'],
-            ),
-            Text(
-              _formatTimestamp(data['timestamp'] as Timestamp),
-              style: const TextStyle(
-                fontSize: 10,
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: ChatBubble(
+        message: data['message'],
+        isCurrentUser: isCurrentUser,
+        profilePhoto: isCurrentUser ? null : widget.userProfilePhoto,
+        timestamp: (data['timestamp'] as Timestamp).toDate(),
       ),
     );
-  }
-
-  String _formatTimestamp(Timestamp timestamp) {
-    DateTime dateTime = timestamp.toDate();
-    return '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
   Widget _buildMessageInput() {

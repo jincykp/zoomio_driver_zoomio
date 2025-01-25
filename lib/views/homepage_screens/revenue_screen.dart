@@ -37,6 +37,16 @@ class RevenueScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
+                    const Text(
+                      "You earn 40% of every trip you complete",
+                      style: TextStyle(
+                          color: ThemeColors.primaryColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
                     // Earnings Summary Cards
                     Row(
                       children: [

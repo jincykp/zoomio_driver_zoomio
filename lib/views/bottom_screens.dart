@@ -76,7 +76,7 @@ class _BottomScreensState extends State<BottomScreens> {
               ),
               GButton(
                 icon: Icons.person,
-                text: "Profile",
+                text: "Account",
               ),
             ],
           ),

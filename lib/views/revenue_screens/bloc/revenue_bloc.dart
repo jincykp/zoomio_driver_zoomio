@@ -83,13 +83,13 @@ class RevenueBloc extends Bloc<RevenueEvent, RevenueState> {
                     tripDate.isBefore(endOfDay);
               }).toList();
 
-              // Calculate earnings
-              final double todayEarnings =
-                  todayTrips.fold(0, (sum, trip) => sum + trip.totalPrice);
-              final double weeklyEarnings =
-                  weeklyTrips.fold(0, (sum, trip) => sum + trip.totalPrice);
-              final double monthlyEarnings =
-                  monthlyTrips.fold(0, (sum, trip) => sum + trip.totalPrice);
+              // Calculate 40% earnings
+              final double todayEarnings = todayTrips.fold(
+                  0, (sum, trip) => sum + (trip.totalPrice * 0.4));
+              final double weeklyEarnings = weeklyTrips.fold(
+                  0, (sum, trip) => sum + (trip.totalPrice * 0.4));
+              final double monthlyEarnings = monthlyTrips.fold(
+                  0, (sum, trip) => sum + (trip.totalPrice * 0.4));
 
               controller.add(RevenueLoaded(
                 todayEarnings: todayEarnings,

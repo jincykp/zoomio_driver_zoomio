@@ -35,7 +35,11 @@ class CustomBottomSheet extends StatelessWidget {
 
       if (bookingEvent.snapshot.value == null) {
         print('DEBUG: Booking data not found for ID: $bookingId');
-        return {'displayName': 'Unknown', 'phone': 'Not available'};
+        return {
+          'displayName': 'Unknown',
+          'phone': 'Not available',
+          'photoUrl': ''
+        };
       }
 
       // Convert booking data to Map
@@ -47,11 +51,15 @@ class CustomBottomSheet extends StatelessWidget {
       final userId = bookingData['userId'];
       if (userId == null) {
         print('DEBUG: No userId found in booking data');
-        return {'displayName': 'Unknown', 'phone': 'Not available'};
+        return {
+          'displayName': 'Unknown',
+          'phone': 'Not available',
+          'photoUrl': ''
+        };
       }
       print('DEBUG: Found userId in booking: $userId');
 
-      // Get user data from Firestore instead of Realtime Database
+      // Get user data from Firestore
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
@@ -59,7 +67,11 @@ class CustomBottomSheet extends StatelessWidget {
 
       if (!userDoc.exists || userDoc.data() == null) {
         print('DEBUG: User data not found in Firestore for ID: $userId');
-        return {'displayName': 'Unknown', 'phone': 'Not available'};
+        return {
+          'displayName': 'Unknown',
+          'phone': 'Not available',
+          'photoUrl': ''
+        };
       }
 
       final userData = userDoc.data()!;
@@ -69,11 +81,16 @@ class CustomBottomSheet extends StatelessWidget {
         'displayName': userData['displayName'] ?? userData['name'] ?? 'Unknown',
         'phone':
             userData['phone'] ?? userData['phoneNumber'] ?? 'Not available',
+        'photoUrl': userData['photoUrl'] ?? userData['profilePhoto'] ?? ''
       };
     } catch (e, stackTrace) {
       print('DEBUG: Error in _getUserDetails: $e');
       print('DEBUG: Stack trace: $stackTrace');
-      return {'displayName': 'Unknown', 'phone': 'Not available'};
+      return {
+        'displayName': 'Unknown',
+        'phone': 'Not available',
+        'photoUrl': ''
+      };
     }
   }
 
@@ -107,7 +124,6 @@ class CustomBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
-
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: const BoxDecoration(
@@ -119,13 +135,13 @@ class CustomBottomSheet extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const SizedBox(
-              height: 200, // Fixed height for loading state
+              height: 200,
               child: Center(
                 child: SizedBox(
-                  width: 24, // Smaller size for progress indicator
+                  width: 24,
                   height: 24,
                   child: CircularProgressIndicator(
-                    strokeWidth: 2.0, // Thinner stroke
+                    strokeWidth: 2.0,
                   ),
                 ),
               ),
@@ -142,7 +158,6 @@ class CustomBottomSheet extends StatelessWidget {
           if (snapshot.hasData) {
             var userDetails = snapshot.data!;
             return IntrinsicHeight(
-              // This will make the height fit the content
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,13 +165,20 @@ class CustomBottomSheet extends StatelessWidget {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      IconButton(
-                          onPressed: () {},
-                          icon: const Icon(
-                            Icons.person,
-                          )),
+                      // Profile Photo
+                      userDetails['photoUrl']!.isNotEmpty
+                          ? CircleAvatar(
+                              radius: 30,
+                              backgroundImage:
+                                  NetworkImage(userDetails['photoUrl']!),
+                            )
+                          : const CircleAvatar(
+                              radius: 30,
+                              child: Icon(Icons.person),
+                            ),
+                      const SizedBox(width: 12),
                       Text(
-                        ' ${userDetails['displayName']}',
+                        userDetails['displayName'] ?? 'Unknown',
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -224,6 +246,7 @@ class CustomBottomSheet extends StatelessWidget {
                                   userEmail: userData['email'] ?? '',
                                   bookingId: bookingId,
                                   userName: userData['displayName'],
+                                  userProfilePhoto: userData['photoUrl'],
                                 ),
                               ),
                             );

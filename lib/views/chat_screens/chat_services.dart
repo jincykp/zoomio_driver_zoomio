@@ -46,7 +46,7 @@ class ChatServices {
         .doc(chatRoomId)
         .collection('messages')
         .orderBy('timestamp', descending: false)
-        .snapshots();
+        .snapshots(includeMetadataChanges: false);
   }
 
   Stream<int> getUnreadMessageCount(String userId) {
