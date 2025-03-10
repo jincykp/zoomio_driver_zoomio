@@ -1,7 +1,6 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:zoomio_driverzoomio/data/model/trip_model.dart';
 import 'package:zoomio_driverzoomio/views/homepage_screens/completed_trip_screen.dart';
 import 'package:zoomio_driverzoomio/views/revenue_screens/bloc/revenue_bloc.dart';

@@ -314,7 +314,8 @@ class CustomBottomSheet extends StatelessWidget {
                             barrierDismissible: false,
                             builder: (BuildContext context) {
                               return const Center(
-                                child: CircularProgressIndicator(),
+                                child: CircularProgressIndicator(
+                                    color: ThemeColors.primaryColor),
                               );
                             },
                           );
@@ -332,7 +333,7 @@ class CustomBottomSheet extends StatelessWidget {
                               backgroundColor: ThemeColors.successColor,
                             ),
                           );
-                          Navigator.push(
+                          Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
                               builder: (context) => RoadLinesScreen(
@@ -341,7 +342,7 @@ class CustomBottomSheet extends StatelessWidget {
                                 userDetails: userDetails,
                                 totalPrice: totalPrice,
                                 bookingId: bookingId,
-                              ), // Replace with your desired screen
+                              ),
                             ),
                           );
                         } catch (e) {
