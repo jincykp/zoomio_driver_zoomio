@@ -27,7 +27,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController passWordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
-  bool? isChecked = false;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +34,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      appBar: AppBar(),
       body: BlocConsumer<SignUpBloc, SignUpState>(
         listener: (context, state) {
           if (state is SignUpSuccess) {
@@ -54,149 +52,133 @@ class _SignUpScreenState extends State<SignUpScreen> {
         },
         builder: (context, state) {
           if (state is SignUpLoading) {
-            return Center(child: CircularProgressIndicator());
+            return Center(
+                child: CircularProgressIndicator(
+              color: ThemeColors.primaryColor,
+            ));
           }
 
-          return SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Form(
-                key: formKey,
-                child: Column(
-                  children: [
-                    // Other form fields go here
-                    const Text(
-                      "Sign up",
-                      style: Textstyles.blackHead,
-                    ),
-                    SizedBox(height: screenHeight * 0.02),
-                    // Email field
-                    Profilefields(
-                      controller: emailController,
-                      hintText: 'Email',
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your email address';
-                        }
-                        final bool isValid =
-                            RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                .hasMatch(value);
-                        if (!isValid) {
-                          return 'Enter a valid email address';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: screenHeight * 0.012),
-
-                    // Password field
-                    CustomPasswordTextFormFields(
-                      hintText: "password",
-                      controller: passWordController,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
-                        } else if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
-                        } else if (value.contains(' ')) {
-                          return 'Password cannot contain whitespace';
-                        }
-                        return null;
-                      },
-                      inputFormatters: [
-                        FilteringTextInputFormatter.deny(RegExp(r'\s')),
-                        LengthLimitingTextInputFormatter(6)
-                      ],
-                    ),
-                    SizedBox(height: screenHeight * 0.012),
-
-                    // Confirm Password field
-                    CustomPasswordTextFormFields(
-                      hintText: "confirm password",
-                      controller: confirmPasswordController,
-                      isConfirmPassword: true,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
-                        } else if (value != passWordController.text) {
-                          return 'Passwords do not match';
-                        }
-                        return null;
-                      },
-                      inputFormatters: [
-                        FilteringTextInputFormatter.deny(RegExp(r'\s')),
-                        LengthLimitingTextInputFormatter(6)
-                      ],
-                    ),
-                    SizedBox(height: screenHeight * 0.01),
-
-                    // Checkbox for Terms of Service
-                    Row(
+          return SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: screenWidth * 0.05,
+                    vertical: screenHeight * 0.02,
+                  ),
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Checkbox(
-                          value: isChecked,
-                          activeColor: Colors.green,
-                          onChanged: (newBool) {
-                            setState(() {
-                              isChecked = newBool;
-                            });
+                        SizedBox(height: screenHeight * 0.08),
+                        // Logo or image could go here
+                        const Text(
+                          "Sign up",
+                          style: Textstyles.blackHead,
+                        ),
+                        SizedBox(height: screenHeight * 0.06),
+
+                        // Email field
+                        Profilefields(
+                          controller: emailController,
+                          hintText: 'Email',
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your email address';
+                            }
+                            final bool isValid =
+                                RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                                    .hasMatch(value);
+                            if (!isValid) {
+                              return 'Enter a valid email address';
+                            }
+                            return null;
                           },
                         ),
-                        const Expanded(
-                          child: Text(
-                              "By signing up, you agree to the Terms of service and Privacy policy."),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: screenHeight * 0.02),
-                    CustomButtons(
-                      onPressed: () {
-                        // Check if the form is valid AND the checkbox is checked
-                        if ((formKey.currentState?.validate() ?? false) &&
-                            (isChecked == true)) {
-                          final email = emailController.text.trim();
-                          final password = passWordController.text.trim();
-                          context.read<SignUpBloc>().add(
-                                SignUpButtonPressed(
-                                  email: email,
-                                  password: password,
-                                ),
-                              );
-                        } else if (isChecked == false) {
-                          // Show a snackbar or dialog if the checkbox is not checked
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                  'Please agree to the Terms of Service and Privacy Policy'),
-                              backgroundColor: ThemeColors.titleColor,
-                            ),
-                          );
-                        }
-                      },
-                      text: 'Sign Up',
-                      backgroundColor: ThemeColors.primaryColor,
-                      textColor: ThemeColors.textColor,
-                      screenWidth: screenWidth,
-                      screenHeight: screenHeight,
-                    ),
-                    if (state is SignUpLoading)
-                      const CircularProgressIndicator(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Expanded(child: Divider(thickness: 1)),
-                        Padding(
-                          padding: EdgeInsets.all(screenWidth * 0.01),
-                          child: const Text("or"),
-                        ),
-                        const Expanded(child: Divider()),
-                      ],
-                    ),
+                        SizedBox(height: screenHeight * 0.025),
 
-                    // Google Sign-In button
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                        // Password field
+                        CustomPasswordTextFormFields(
+                          hintText: "password",
+                          controller: passWordController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your password';
+                            } else if (value.length < 6) {
+                              return 'Password must be at least 6 characters';
+                            } else if (value.contains(' ')) {
+                              return 'Password cannot contain whitespace';
+                            }
+                            return null;
+                          },
+                          inputFormatters: [
+                            FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                            LengthLimitingTextInputFormatter(6)
+                          ],
+                        ),
+                        SizedBox(height: screenHeight * 0.025),
+
+                        // Confirm Password field
+                        CustomPasswordTextFormFields(
+                          hintText: "confirm password",
+                          controller: confirmPasswordController,
+                          isConfirmPassword: true,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your password';
+                            } else if (value != passWordController.text) {
+                              return 'Passwords do not match';
+                            }
+                            return null;
+                          },
+                          inputFormatters: [
+                            FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                            LengthLimitingTextInputFormatter(6)
+                          ],
+                        ),
+
+                        SizedBox(height: screenHeight * 0.06),
+
+                        CustomButtons(
+                          onPressed: () {
+                            // Check if the form is valid
+                            if (formKey.currentState?.validate() ?? false) {
+                              final email = emailController.text.trim();
+                              final password = passWordController.text.trim();
+                              context.read<SignUpBloc>().add(
+                                    SignUpButtonPressed(
+                                      email: email,
+                                      password: password,
+                                    ),
+                                  );
+                            }
+                          },
+                          text: 'Sign Up',
+                          backgroundColor: ThemeColors.primaryColor,
+                          textColor: ThemeColors.textColor,
+                          screenWidth: screenWidth,
+                          screenHeight: screenHeight,
+                        ),
+
+                        SizedBox(height: screenHeight * 0.04),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Expanded(child: Divider(thickness: 1)),
+                            Padding(
+                              padding: EdgeInsets.all(screenWidth * 0.01),
+                              child: const Text("or"),
+                            ),
+                            const Expanded(child: Divider()),
+                          ],
+                        ),
+
+                        SizedBox(height: screenHeight * 0.02),
+
+                        // Google Sign-In button
                         GestureDetector(
                           onTap: () {
                             AuthServices().signInWithGoogle(context);
@@ -206,7 +188,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             width: 40,
                             decoration: BoxDecoration(
                               border: Border.all(
-                                  width: 1, color: ThemeColors.textColor),
+                                width: 1,
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Image.asset(
@@ -214,30 +201,35 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               fit: BoxFit.cover,
                             ),
                           ),
-                        )
+                        ),
+
+                        SizedBox(height: screenHeight * 0.03),
+
+                        // Already have an account? Sign In link
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('Already have an account?'),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const SignInScreen()),
+                                );
+                              },
+                              child: const Text("Sign In",
+                                  style: TextStyle(
+                                      color: ThemeColors.primaryColor)),
+                            ),
+                          ],
+                        ),
+
+                        SizedBox(height: screenHeight * 0.05),
                       ],
                     ),
-
-                    // Already have an account? Sign In link
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('Already have an account?'),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const SignInScreen()),
-                            );
-                          },
-                          child: const Text("Sign In",
-                              style:
-                                  TextStyle(color: ThemeColors.primaryColor)),
-                        ),
-                      ],
-                    )
-                  ],
+                  ),
                 ),
               ),
             ),

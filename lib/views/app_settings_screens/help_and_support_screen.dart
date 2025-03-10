@@ -29,6 +29,7 @@ class HelpSupportScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: ThemeColors.primaryColor,
         title: Text(
           'Help & Support',
           style: GoogleFonts.alikeAngular(fontWeight: FontWeight.bold),

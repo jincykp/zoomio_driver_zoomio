@@ -20,12 +20,18 @@ class RevenueScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: ThemeColors.primaryColor,
-          title: const Text("Revenue"),
+          title: const Text(
+            "Revenue",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
         body: BlocBuilder<RevenueBloc, RevenueState>(
           builder: (context, state) {
             if (state is RevenueLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(
+                  child: CircularProgressIndicator(
+                color: ThemeColors.primaryColor,
+              ));
             }
 
             if (state is RevenueError) {

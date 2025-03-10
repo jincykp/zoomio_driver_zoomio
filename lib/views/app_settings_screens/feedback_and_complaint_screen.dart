@@ -30,7 +30,10 @@ class FeedbackAndComplaintsScreen extends StatelessWidget {
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: CircularProgressIndicator(
+              color: ThemeColors.primaryColor,
+            ));
           }
 
           if (!snapshot.hasData || snapshot.data?.snapshot.value == null) {

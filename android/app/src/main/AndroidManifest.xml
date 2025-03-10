@@ -8,14 +8,18 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+
 
     <!-- (Optional) Permission to check the state of network connectivity -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+
     <application
-        android:label="zoomio_driverzoomio"
+        android:label="Zoomio Driver Connect"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/launcher_icon">
         <activity
             android:name=".MainActivity"
             android:exported="true"

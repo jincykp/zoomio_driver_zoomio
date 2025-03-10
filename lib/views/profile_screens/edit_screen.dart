@@ -99,7 +99,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         backgroundColor: ThemeColors.primaryColor,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+              color: ThemeColors.primaryColor,
+            ))
           : SingleChildScrollView(
               child: Form(
                 key: formKey,

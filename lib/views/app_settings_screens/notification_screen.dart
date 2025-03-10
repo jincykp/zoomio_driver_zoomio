@@ -19,13 +19,18 @@ class NotificationScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: ThemeColors.primaryColor,
-          title: const Text('Notifications'),
+          title: const Text(
+            'Notifications',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
         body: BlocBuilder<NotificationBloc, NotificationState>(
           builder: (context, state) {
             if (state is NotificationLoading) {
               return const Center(
-                child: CircularProgressIndicator(),
+                child: CircularProgressIndicator(
+                  color: ThemeColors.primaryColor,
+                ),
               );
             }
 

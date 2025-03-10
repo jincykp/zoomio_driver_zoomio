@@ -210,15 +210,19 @@ class _ProfileScreenTwoState extends State<ProfileScreenTwo> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(19)),
                     ),
+                    filled: true,
+                    fillColor: Colors.transparent,
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   ),
                   value: selectedGender,
-                  style: const TextStyle(
-                    //  color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  hint: const Text(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                  dropdownColor: Theme.of(context).cardColor,
+                  hint: Text(
                     "Select Gender",
-                    // style: TextStyle(color: Colors.black),
+                    style: TextStyle(color: Theme.of(context).hintColor),
                   ),
                   onChanged: (newValue) {
                     setState(() {
@@ -249,15 +253,19 @@ class _ProfileScreenTwoState extends State<ProfileScreenTwo> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(19)),
                     ),
+                    filled: true,
+                    fillColor: Colors.transparent,
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   ),
                   value: selectedVehiclePreference,
-                  style: const TextStyle(
-                    //  color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  hint: const Text(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                  dropdownColor: Theme.of(context).cardColor,
+                  hint: Text(
                     "Select Vehicle Preference",
-                    //  style: TextStyle(color: Colors.black),
+                    style: TextStyle(color: Theme.of(context).hintColor),
                   ),
                   onChanged: (newValue) {
                     setState(() {

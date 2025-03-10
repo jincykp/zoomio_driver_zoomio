@@ -3,6 +3,7 @@ import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -10,6 +11,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:zoomio_driverzoomio/data/model/profile_model.dart';
 import 'package:zoomio_driverzoomio/data/services/driver_accepted_services.dart';
+import 'package:zoomio_driverzoomio/data/services/local_notification_services.dart';
+import 'package:zoomio_driverzoomio/data/services/new_notification_services.dart';
 import 'package:zoomio_driverzoomio/data/services/profile_services.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_bottomsheet.dart';
 import 'package:zoomio_driverzoomio/views/custom_widgets/custom_button.dart';
@@ -321,9 +324,21 @@ class _HomeScreenState extends State<HomeScreen> {
     // TODO: implement initState
     super.initState();
     fetchCurrentLocation();
-
+    NotificationService().requestPermission().then((_) {
+      // Upload FCM token after permission is granted
+      NotificationService().uploadFcmToken();
+      NotificationService().init();
+    });
     // Initialize async setup
     initializeDriver();
+    notificatinHandler();
+  }
+
+  void notificatinHandler() {
+    FirebaseMessaging.onMessage.listen((event) async {
+      print('event ::::   ${event.notification!.title}');
+      NotificationService().showNotification(event);
+    });
   }
 
   @override

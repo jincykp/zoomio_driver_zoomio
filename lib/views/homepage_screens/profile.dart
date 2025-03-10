@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:zoomio_driverzoomio/data/model/profile_model.dart';
 import 'package:zoomio_driverzoomio/data/services/profile_services.dart';
 import 'package:zoomio_driverzoomio/views/app_settings_screens/help_and_support_screen.dart';
 import 'package:zoomio_driverzoomio/views/app_settings_screens/notification_screen.dart';
@@ -46,7 +45,10 @@ class ProfileScreen extends StatelessWidget {
       body: BlocBuilder<DriverProfileBloc, DriverProfileState>(
         builder: (context, state) {
           if (state is DriverProfileLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: CircularProgressIndicator(
+              color: ThemeColors.primaryColor,
+            ));
           } else if (state is DriverProfileError) {
             return Center(child: Text(state.message));
           } else if (state is DriverProfileLoaded) {
@@ -237,7 +239,12 @@ class ProfileScreen extends StatelessWidget {
                                     onPressed: () {
                                       Navigator.of(context).pop();
                                     },
-                                    child: const Text("Cancel"),
+                                    child: const Text(
+                                      "Cancel",
+                                      style: TextStyle(
+                                          color: ThemeColors.baseColor,
+                                          fontSize: 17),
+                                    ),
                                   ),
                                   TextButton(
                                     onPressed: () async {
@@ -251,7 +258,12 @@ class ProfileScreen extends StatelessWidget {
                                         ),
                                       );
                                     },
-                                    child: const Text("Logout"),
+                                    child: const Text(
+                                      "Logout",
+                                      style: TextStyle(
+                                          color: ThemeColors.primaryColor,
+                                          fontSize: 17),
+                                    ),
                                   ),
                                 ],
                               );

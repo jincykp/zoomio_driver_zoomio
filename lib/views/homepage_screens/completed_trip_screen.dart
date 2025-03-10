@@ -28,7 +28,9 @@ class CompletedTripScreen extends StatelessWidget {
           builder: (context, state) {
             if (state is CompletedTripsLoading) {
               return const Center(
-                child: CircularProgressIndicator(),
+                child: CircularProgressIndicator(
+                  color: ThemeColors.primaryColor,
+                ),
               );
             }
 

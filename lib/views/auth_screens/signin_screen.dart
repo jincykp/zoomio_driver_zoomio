@@ -18,27 +18,27 @@ class SignInScreen extends StatefulWidget {
 
 class _SignInScreenState extends State<SignInScreen> {
   final auth = AuthServices();
-
   final emailController = TextEditingController();
   final passWordController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
-      appBar: AppBar(),
       body: Padding(
         padding: EdgeInsets.all(screenWidth * 0.05),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            // Removed mainAxisAlignment: MainAxisAlignment.spaceEvenly
             children: [
+              SizedBox(height: screenHeight * 0.1), // Added top spacing
               const Text(
                 "Sign In",
                 style: Textstyles.blackHead,
               ),
-              SizedBox(height: screenHeight * 0.02),
+              SizedBox(height: screenHeight * 0.04),
               Profilefields(
                 controller: emailController,
                 hintText: 'Enter your email',
@@ -55,7 +55,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   return null;
                 },
               ),
-              SizedBox(height: screenHeight * 0.01),
+              SizedBox(height: screenHeight * 0.02),
               Profilefields(
                 controller: passWordController,
                 hintText: 'Enter your password',
@@ -74,31 +74,36 @@ class _SignInScreenState extends State<SignInScreen> {
                   LengthLimitingTextInputFormatter(6)
                 ],
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const ClickOtpScreen()));
-                      },
-                      child: const Text(
-                        "Forget Password?",
-                        style: Textstyles.spclTexts,
-                      )),
-                ],
+              // Right-aligned Forget Password button
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ClickOtpScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    "Forget Password?",
+                    style: Textstyles.spclTexts,
+                  ),
+                ),
               ),
+              SizedBox(height: screenHeight * 0.02),
               CustomButtons(
-                  text: "Sign In",
-                  onPressed: logIn,
-                  backgroundColor: ThemeColors.primaryColor,
-                  textColor: ThemeColors.textColor,
-                  screenWidth: screenWidth,
-                  screenHeight: screenHeight),
+                text: "Sign In",
+                onPressed: logIn,
+                backgroundColor: ThemeColors.primaryColor,
+                textColor: ThemeColors.textColor,
+                screenWidth: screenWidth,
+                screenHeight: screenHeight,
+              ),
+              SizedBox(height: screenHeight * 0.03),
+              // Fixed divider with "or" text
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Expanded(
                     child: Divider(
@@ -106,56 +111,68 @@ class _SignInScreenState extends State<SignInScreen> {
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.all(screenWidth * 0.01),
+                    padding: EdgeInsets.symmetric(horizontal: 16),
                     child: const Text("or"),
                   ),
-                  const Expanded(child: Divider()),
+                  const Expanded(
+                    child: Divider(
+                      thickness: 1,
+                    ),
+                  ),
                 ],
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      AuthServices().signInWithGoogle(context);
-                    },
-                    child: Container(
-                      width: 50, height: 50,
-                      // width: screenWidth * 0.001,
-                      // height: screenHeight * 0.001,
-                      decoration: BoxDecoration(
-                          border: Border.all(
-                              width: 1, color: ThemeColors.textColor),
-                          borderRadius: BorderRadius.circular(8)),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Image.asset(
-                          "assets/images/gimage.png",
-                          fit: BoxFit.cover,
-                        ),
+              SizedBox(height: screenHeight * 0.03),
+              // Centered Google sign-in button
+              Center(
+                child: GestureDetector(
+                  onTap: () {
+                    AuthServices().signInWithGoogle(context);
+                  },
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        width: 1,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Image.asset(
+                        "assets/images/gimage.png",
+                        fit: BoxFit.cover,
                       ),
                     ),
-                  )
-                ],
+                  ),
+                ),
               ),
+              SizedBox(height: screenHeight * 0.03),
+              // Centered "Don't have an account?" row
               Row(
-                //  crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text("Don't have an account?"),
                   TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const SignUpScreen()));
-                      },
-                      child: const Text(
-                        "Sign up",
-                        style: TextStyle(color: ThemeColors.primaryColor),
-                      ))
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SignUpScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      "Sign up",
+                      style: TextStyle(color: ThemeColors.primaryColor),
+                    ),
+                  )
                 ],
-              )
+              ),
+              SizedBox(height: screenHeight * 0.02),
             ],
           ),
         ),
@@ -163,7 +180,7 @@ class _SignInScreenState extends State<SignInScreen> {
     );
   }
 
-  logIn() async {
+  void logIn() async {
     // Check if the email and password fields are not empty
     if (emailController.text.isEmpty || passWordController.text.isEmpty) {
       log("Email and password cannot be empty");
@@ -182,7 +199,9 @@ class _SignInScreenState extends State<SignInScreen> {
     // Attempt to log in the user
     try {
       final user = await auth.loginAccountWithEmail(
-          emailController.text.trim(), passWordController.text.trim());
+        emailController.text.trim(),
+        passWordController.text.trim(),
+      );
 
       // Check if login was successful
       if (user != null) {
@@ -200,12 +219,12 @@ class _SignInScreenState extends State<SignInScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             backgroundColor: ThemeColors.alertColor,
-            // Change this to your desired color
             content: Padding(
-              padding: EdgeInsets.symmetric(
-                  horizontal: 16.0, vertical: 8.0), // Adjust padding as needed
-              child: Text("Login failed. Please check your email and password.",
-                  style: Textstyles.smallTexts),
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Text(
+                "Login failed. Please check your email and password.",
+                style: Textstyles.smallTexts,
+              ),
             ),
           ),
         );
